@@ -1,19 +1,30 @@
-import express  from "express";
-import dotenv from "dotenv"
 
+import express from "express";
+import dotenv from "dotenv";
+import { dbCheckTables } from "./config/database";
+import userRoutes from "./routes/userRoutes";
+import hotelRoutes from "./routes/hotelRoutes";
 
+dotenv.config();
 
-dotenv.config()
-
-const app = express()
-const PORT = process.env.PORT || 5000
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-const startServer = async ()=>{
-    
-    app.listen(PORT,()=>{
-        console.log(`Server is running on http://localhost:${PORT}`);
-    });
-}; 
+app.use("/api", userRoutes);
+app.use("/api", hotelRoutes);
+const startServer = async () => {
+    try {
+        await dbCheckTables();
+
+        app.listen(PORT, () => {
+            console.log(`Server is running on http://localhost:${PORT}`);
+        });
+    } catch (error) {
+        console.error("Failed to start server:", error);
+        process.exit(1);
+    }
+};
+
 startServer();
