@@ -2,6 +2,7 @@ import { Pool } from "pg";
 import dotenv from "dotenv";
 import { createUserTable } from "../services/userServices";
 import { createHotelTable } from "../services/hotelServices";
+import { createBookingTable } from "../services/bookingServices";
 
 dotenv.config();
 
@@ -39,6 +40,6 @@ await testDbConnection();
 
 await createUserTable();
 await createHotelTable();
-
+await createBookingTable();
 console.log("Database tables checked successfully");
 };
