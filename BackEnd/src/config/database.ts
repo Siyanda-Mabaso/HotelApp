@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { createUserTable } from "../services/userServices";
 import { createHotelTable } from "../services/hotelServices";
 import { createBookingTable } from "../services/bookingServices";
+import { createFavouriteTable } from "../services/favouriteServices";
 
 dotenv.config();
 
@@ -41,5 +42,6 @@ await testDbConnection();
 await createUserTable();
 await createHotelTable();
 await createBookingTable();
+await createFavouriteTable();
 console.log("Database tables checked successfully");
 };

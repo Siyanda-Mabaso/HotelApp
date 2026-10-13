@@ -8,20 +8,25 @@ import {
     getUsersById,
     updateUserById,
     deleteUserById
-} from "../controllers/userControllers"
+} from "../controllers/userControllers";
+
+import {
+    protect,
+    adminOnly
+} from "../middleware/authMiddleware";
 
 const router = Router();
 
+// Public routes
 router.post("/register", register);
-
 router.post("/login", login);
 
-router.get("/users", getAllUsers);
+// Authenticated routes
+router.get("/users", protect, adminOnly, getAllUsers);
+router.get("/users/:id", protect, getUsersById);
+router.put("/users/:id", protect, updateUserById);
 
-router.get("/users/:id", getUsersById);
-
-router.put("/users/:id", updateUserById);
-
-router.delete("/users/:id", deleteUserById);
+// Admin-only user deletion
+router.delete("/users/:id", protect, adminOnly, deleteUserById);
 
 export default router;
