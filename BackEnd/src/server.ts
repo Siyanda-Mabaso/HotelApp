@@ -5,6 +5,7 @@ import { dbCheckTables } from "./config/database";
 import userRoutes from "./routes/userRoutes";
 import hotelRoutes from "./routes/hotelRoutes";
 import bookingRoutes from "./routes/bookingRoutes";
+import reviewRoutes from "./routes/reviewRoutes";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use("/api", userRoutes);
 app.use("/api", hotelRoutes);
 app.use("/api", bookingRoutes);
+app.use("/api", reviewRoutes);
 const startServer = async () => {
     try {
         await dbCheckTables();
