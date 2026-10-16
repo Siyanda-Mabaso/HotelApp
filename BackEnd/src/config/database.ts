@@ -5,6 +5,7 @@ import { createHotelTable } from "../services/hotelServices";
 import { createBookingTable } from "../services/bookingServices";
 import { createReviewTable } from "../services/reviewServices";
 import { createFavouriteTable } from "../services/favouriteServices";
+import { createRoomTable } from "../services/roomServices";
 
 dotenv.config();
 
@@ -45,5 +46,6 @@ await createHotelTable();
 await createBookingTable();
 await createReviewTable();
 await createFavouriteTable();
+await createRoomTable();
 console.log("Database tables checked successfully");
 };

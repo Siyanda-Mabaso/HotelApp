@@ -7,7 +7,7 @@ import hotelRoutes from "./routes/hotelRoutes";
 import bookingRoutes from "./routes/bookingRoutes";
 import reviewRoutes from "./routes/reviewRoutes";
 import favouriteRoutes from "./routes/favouriteRoutes";
-
+import roomRoutes from "./routes/roomRoutes";
 dotenv.config();
 
 const app = express();
@@ -20,6 +20,7 @@ app.use("/api", hotelRoutes);
 app.use("/api", bookingRoutes);
 app.use("/api", reviewRoutes);
 app.use("/api", favouriteRoutes);
+app.use("/api", roomRoutes);
 const startServer = async () => {
     try {
         await dbCheckTables();
@@ -29,7 +30,7 @@ const startServer = async () => {
         });
     } catch (error) {
         console.error("Failed to start server:", error);
-        process.exit(1);
+        process.exit(1);  
     }
 };
 
