@@ -162,3 +162,4 @@ export const countBookedRooms = async (
 
   return Number(rows[0].booked_rooms);
 };
+ 
