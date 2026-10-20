@@ -8,9 +8,11 @@ import bookingRoutes from "./routes/bookingRoutes";
 import reviewRoutes from "./routes/reviewRoutes";
 import favouriteRoutes from "./routes/favouriteRoutes";
 import roomRoutes from "./routes/roomRoutes";
+import cors from "cors";
 dotenv.config();
 
 const app = express();
+app.use(cors());
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
