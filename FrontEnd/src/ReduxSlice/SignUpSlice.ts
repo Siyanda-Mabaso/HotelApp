@@ -23,7 +23,7 @@ export const signup = createAsyncThunk(
   "signup",
   async (userData: SignUpState) => {
     const response = await axios.post(
-      "/api/register",
+     "http://localhost:3000/api/register",
       {
         name: userData.name,
         email: userData.email,
