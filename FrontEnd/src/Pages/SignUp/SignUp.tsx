@@ -1,21 +1,16 @@
-
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-
 import type { RootState, AppDispatch } from "../../Store/store";
-
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
 import Input from "../../Components/Input/Input";
 import Button from "../../Components/Button/Button";
-
 import {
   signup,
   setName,
   setEmail,
   setPassword,
 } from "../../ReduxSlice/SignUpSlice";
-
 import styles from "./SignUp.module.css";
 
 const SignUp = () => {
