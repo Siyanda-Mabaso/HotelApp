@@ -1,0 +1,68 @@
+
+.footer {
+  background-color: #073b3b;
+  color: #ffffff;
+  padding: 45px 7% 0;
+}
+
+.footerContent {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr;
+  gap: 40px;
+  padding-bottom: 35px;
+}
+
+.brandSection,
+.linksSection,
+.contactSection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.logo {
+  color: #70d6c7;
+  font-size: 25px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.brandSection p,
+.contactSection p {
+  max-width: 320px;
+  color: #d1e3e3;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.linksSection h3,
+.contactSection h3 {
+  margin: 0 0 5px;
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.linksSection a {
+  color: #d1e3e3;
+  font-size: 14px;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.linksSection a:hover {
+  color: #70d6c7;
+}
+
+.bottomBar {
+  border-top: 1px solid #356363;
+  padding: 18px 0;
+  text-align: center;
+}
+
+.bottomBar p {
+  margin: 0;
+  color: #d1e3e3;
+  font-size: 13px;
+}
