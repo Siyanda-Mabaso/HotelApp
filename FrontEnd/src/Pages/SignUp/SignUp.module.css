@@ -1,0 +1,90 @@
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f3f8f8;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 45px 20px;
+}
+
+.formCard {
+  width: 100%;
+  max-width: 450px;
+  box-sizing: border-box;
+  padding: 35px;
+  background-color: #ffffff;
+  border: 1px solid #e0ebeb;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(7, 59, 59, 0.08);
+}
+
+.formCard h1 {
+  margin: 0 0 10px;
+  color: #073b3b;
+  font-size: 28px;
+  text-align: center;
+}
+
+.subtitle {
+  margin: 0 0 28px;
+  color: #647474;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form button {
+  width: 100%;
+}
+
+.loginText {
+  margin: 24px 0 0;
+  color: #647474;
+  font-size: 14px;
+  text-align: center;
+}
+
+.loginLink {
+  color: #008080;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.loginLink:hover {
+  color: #006666;
+  text-decoration: underline;
+}
+
+.errorMessage {
+  margin: 0;
+  color: #c62828;
+  font-size: 14px;
+}
+
+.successMessage {
+  padding: 20px 0;
+  text-align: center;
+}
+
+.successMessage h2 {
+  color: #008080;
+  font-size: 22px;
+}
+
+.successMessage p {
+  color: #647474;
+  line-height: 1.6;
+}
