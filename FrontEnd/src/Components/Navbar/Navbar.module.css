@@ -1,0 +1,49 @@
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 7%;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5eeee;
+}
+
+.logo {
+  color: #008080;
+  font-size: 26px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.link {
+  color: #263238;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.link:hover {
+  color: #008080;
+}
+
+.signupButton {
+  padding: 10px 20px;
+  background-color: #008080;
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.signupButton:hover {
+  background-color: #006666;
+}
