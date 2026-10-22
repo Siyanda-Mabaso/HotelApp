@@ -1,0 +1,244 @@
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f3f8f8;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: 1150px;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 40px 25px;
+}
+
+.heading {
+  margin-bottom: 30px;
+}
+
+.backLink {
+  display: inline-block;
+  margin-bottom: 22px;
+  color: #008080;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: #006666;
+}
+
+.headingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #008080;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.heading h1 {
+  margin: 0 0 10px;
+  color: #073b3b;
+  font-size: 32px;
+}
+
+.subtitle {
+  margin: 0;
+  color: #647474;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  background-color: #008080;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.addButton:hover {
+  background-color: #006666;
+}
+
+.hotelSection {
+  padding: 25px;
+  border: 1px solid #e0ebeb;
+  border-radius: 14px;
+  background-color: #ffffff;
+  box-shadow: 0 8px 25px rgba(7, 59, 59, 0.05);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  color: #073b3b;
+  font-size: 21px;
+}
+
+.hotelCount {
+  padding: 7px 12px;
+  border-radius: 20px;
+  background-color: #e4f4f2;
+  color: #00796b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hotelGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.hotelCard {
+  overflow: hidden;
+  border: 1px solid #e1ebeb;
+  border-radius: 12px;
+  background-color: #ffffff;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.hotelCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(7, 59, 59, 0.08);
+}
+
+.hotelTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background-color: #eaf5f4;
+}
+
+.hotelIcon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  color: #008080;
+  font-size: 27px;
+}
+
+.rating {
+  color: #956b00;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hotelInfo {
+  padding: 20px;
+}
+
+.hotelInfo h3 {
+  margin: 0 0 10px;
+  color: #073b3b;
+  font-size: 19px;
+}
+
+.location {
+  margin: 0 0 14px;
+  color: #647474;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.description {
+  min-height: 42px;
+  margin: 0 0 20px;
+  color: #455a5a;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid #e8eeee;
+}
+
+.cardFooter strong {
+  color: #008080;
+  font-size: 19px;
+}
+
+.perNight {
+  color: #647474;
+  font-size: 13px;
+}
+
+.message {
+  padding: 25px 0;
+  color: #647474;
+  text-align: center;
+}
+
+.errorBox,
+.emptyState {
+  padding: 35px 20px;
+  border-radius: 10px;
+  background-color: #f7fafa;
+  text-align: center;
+}
+
+.errorBox p,
+.emptyState p {
+  color: #647474;
+  line-height: 1.6;
+}
+
+.errorBox p {
+  color: #c62828;
+}
+
+.emptyState h3 {
+  margin: 0;
+  color: #073b3b;
+  font-size: 19px;
+}
+
+.retryButton {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 7px;
+  background-color: #008080;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background-color: #006666;
+}
