@@ -1,7 +1,10 @@
 
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import axios from "axios";
+
+import type { RootState } from "../../Store/store";
 
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
@@ -31,36 +34,72 @@ const initialFormData: HotelFormData = {
 };
 
 const AddHotel = () => {
-  const [formData, setFormData] = useState<HotelFormData>(initialFormData);
+  const [formData, setFormData] =
+    useState<HotelFormData>(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const navigate = useNavigate();
 
-  const handleChange = (field: keyof HotelFormData, value: string) => {
+  const token = useSelector(
+    (state: RootState) => state.login.token,
+  );
+
+  const user = useSelector(
+    (state: RootState) => state.login.user,
+  );
+
+  const handleChange = (
+    field: keyof HotelFormData,
+    value: string,
+  ) => {
     setFormData((previous) => ({
       ...previous,
       [field]: value,
     }));
+
+    setError("");
+    setSuccess("");
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
 
     setError("");
     setSuccess("");
+
+    if (!token || !user) {
+      setError("Please log in before adding a hotel.");
+      return;
+    }
+
+    if (user.role !== "admin") {
+      setError("Access denied. Only administrators can add hotels.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      await axios.post("/api/hotels", {
-        ...formData,
-        star_rating: Number(formData.star_rating),
-        price_per_night: Number(formData.price_per_night),
-      });
+      await axios.post(
+        "/api/hotels",
+        {
+          ...formData,
+          star_rating: Number(formData.star_rating),
+          price_per_night: Number(formData.price_per_night),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
       setSuccess("Hotel added successfully!");
-      setFormData(initialFormData);
+      setFormData({ ...initialFormData });
     } catch (error) {
       if (axios.isAxiosError(error)) {
         setError(
@@ -86,7 +125,9 @@ const AddHotel = () => {
           </Link>
 
           <h1>Add a Hotel</h1>
-          <p>Enter the accommodation details to list it on Paradise.</p>
+          <p>
+            Enter the accommodation details to list it on Paradise.
+          </p>
         </div>
 
         <form className={styles.formCard} onSubmit={handleSubmit}>
@@ -148,6 +189,7 @@ const AddHotel = () => {
           <div className={styles.formRow}>
             <div className={styles.inputGroup}>
               <label htmlFor="star_rating">Star Rating</label>
+
               <select
                 id="star_rating"
                 name="star_rating"
@@ -172,13 +214,20 @@ const AddHotel = () => {
               type="number"
               placeholder="e.g. 1200"
               value={formData.price_per_night}
-              onChange={(value) => handleChange("price_per_night", value)}
+              onChange={(value) =>
+                handleChange("price_per_night", value)
+              }
               required
             />
           </div>
 
-          {error && <p className={styles.errorMessage}>{error}</p>}
-          {success && <p className={styles.successMessage}>{success}</p>}
+          {error && (
+            <p className={styles.errorMessage}>{error}</p>
+          )}
+
+          {success && (
+            <p className={styles.successMessage}>{success}</p>
+          )}
 
           <div className={styles.formActions}>
             <Button
@@ -200,4 +249,5 @@ const AddHotel = () => {
     </div>
   );
 };
+
 export default AddHotel;
