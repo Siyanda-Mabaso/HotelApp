@@ -3,6 +3,7 @@ import SignUp from "./Pages/SignUp/SignUp";
 import Login from "./Pages/Login/Login";
 import AdminDashboard from "./Pages/AdminDashboard/AdminDashboard";
 import AddHotel from "./Pages/AddHotel/AddHotel";
+import ViewHotels from "./Pages/ViewHotels/ViewHotels";
 
 const App = () => {
   return (
@@ -12,10 +13,11 @@ const App = () => {
         <Route path="/signup" element={<SignUp />} />
          <Route path="/login" element={<Login />} />
          <Route path="/admin/hotels/add" element={<AddHotel />} />
+         <Route path="/admin/hotels" element={<ViewHotels />} />
          <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
   );
-};
+}; 
 
 export default App;
