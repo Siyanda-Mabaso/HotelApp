@@ -8,6 +8,7 @@ import AddHotel from "./Pages/AddHotel/AddHotel";
 import ViewHotels from "./Pages/ViewHotels/ViewHotels";
 import ProtectedRoute from "./Components/ProtectedRoute/ProtectedRoute";
 import Home from "./Pages/Home/Home";
+import HotelDetails from "./Pages/HotelDetails/HotelDetails";
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/hotels/:id" element={<HotelDetails />} />
 
         {/* Admin-only pages */}
         <Route element={<ProtectedRoute />}>
