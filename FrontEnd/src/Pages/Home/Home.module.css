@@ -1,0 +1,42 @@
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f9f8;
+}
+
+.main {
+  flex: 1;
+  width: min(900px, 90%);
+  margin: 0 auto;
+  padding: 80px 0;
+  text-align: center;
+}
+
+.main h1 {
+  color: #073b3b;
+  font-size: 36px;
+  margin-bottom: 16px;
+}
+
+.main p {
+  color: #526565;
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.link {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 12px 22px;
+  border-radius: 8px;
+  background: #008080;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link:hover {
+  background: #006666;
+}
