@@ -1,0 +1,212 @@
+
+.page {
+    min-height: 65vh;
+    padding: 48px 7%;
+    background: #f7f9fa;
+    color: #24333b;
+}
+
+.heading {
+    margin-bottom: 32px;
+}
+
+.eyebrow {
+    color: #0f766e;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.heading h1 {
+    margin: 8px 0;
+    font-size: clamp(30px, 4vw, 42px);
+}
+
+.heading > p:last-child {
+    color: #64748b;
+}
+
+.bookingList {
+    display: grid;
+    gap: 22px;
+}
+
+.card,
+.empty {
+    padding: 26px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid #edf0f2;
+}
+
+.bookingNumber {
+    margin: 0 0 8px;
+    color: #0f766e;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.cardHeader h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+}
+
+.roomType {
+    margin: 0;
+    color: #64748b;
+}
+
+.status {
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.details {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+    padding: 24px 0;
+}
+
+.details div {
+    display: grid;
+    gap: 8px;
+}
+
+.details span,
+.totalLabel {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+}
+
+.details strong {
+    font-size: 14px;
+}
+
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding-top: 20px;
+    border-top: 1px solid #edf0f2;
+}
+
+.cardFooter > div {
+    display: grid;
+    gap: 6px;
+}
+
+.price {
+    color: #0f766e;
+    font-size: 23px;
+}
+
+.cancelButton,
+.primaryButton {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.cancelButton {
+    background: #fff1f2;
+    color: #be123c;
+}
+
+.cancelButton:hover {
+    background: #ffe4e6;
+}
+
+.primaryButton {
+    background: #0f766e;
+    color: white;
+}
+
+.primaryButton:hover {
+    background: #115e59;
+}
+
+.empty {
+    text-align: center;
+    padding: 50px 24px;
+}
+
+.empty p,
+.info {
+    margin-bottom: 24px;
+    color: #64748b;
+}
+
+.success,
+.error {
+    margin-bottom: 20px;
+    padding: 13px 16px;
+    border-radius: 8px;
+}
+
+.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+@media (max-width: 650px) {
+    .page {
+        padding: 32px 5%;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+    .details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cardHeader,
+    .cardFooter {
+        align-items: flex-start;
+    }
+
+    .cardFooter {
+        flex-direction: column;
+    }
+}
