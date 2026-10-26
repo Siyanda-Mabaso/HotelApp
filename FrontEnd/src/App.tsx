@@ -10,6 +10,7 @@ import ProtectedRoute from "./Components/ProtectedRoute/ProtectedRoute";
 import Home from "./Pages/Home/Home";
 import HotelDetails from "./Pages/HotelDetails/HotelDetails";
 import Booking from "./Pages/Booking/Booking";
+import MyBookings from "./Pages/MyBookings/MyBookings";
 
 const App = () => {
   return (
@@ -22,6 +23,7 @@ const App = () => {
         <Route path="/home" element={<Home />} />
         <Route path="/hotels/:id" element={<HotelDetails />} />
         <Route path="/hotels/:id/book" element={<Booking />} />
+        <Route path="/my-bookings" element={<MyBookings />} />
 
 
         {/* Admin-only pages */}
