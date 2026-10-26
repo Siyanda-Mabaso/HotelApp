@@ -21,6 +21,7 @@ const Navbar = () => {
         <Link to="/signup" className={styles.signupButton}>
           Sign Up
         </Link>
+        <Link to="/my-bookings">My Bookings</Link>
       </div>
     </nav>
   );
