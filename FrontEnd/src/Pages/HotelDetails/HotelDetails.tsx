@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
 import Navbar from "../../Components/Navbar/Navbar";
@@ -21,6 +20,7 @@ interface Hotel {
 
 const HotelDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,8 +105,8 @@ const HotelDetails = () => {
                   <p className={styles.eyebrow}>YOUR NEXT GETAWAY</p>
                   <h1>{hotel.name}</h1>
                   <p className={styles.location}>
-                    <span aria-hidden="true">⌖</span>{" "}
-                    {hotel.address}, {hotel.city}, {hotel.country}
+                    <span aria-hidden="true">⌖</span> {hotel.address},{" "}
+                    {hotel.city}, {hotel.country}
                   </p>
                 </div>
 
@@ -127,18 +127,14 @@ const HotelDetails = () => {
                 <div>
                   <p className={styles.priceLabel}>Price per night</p>
                   <p className={styles.price}>
-                    R
-                    {Number(hotel.price_per_night).toLocaleString("en-ZA")}
+                    R{Number(hotel.price_per_night).toLocaleString("en-ZA")}
                     <span> / night</span>
                   </p>
                 </div>
 
                 <button
-                  type="button"
                   className={styles.primaryButton}
-                  onClick={() =>
-                    alert("Hotel booking will be available in a later step.")
-                  }
+                  onClick={() => navigate(`/hotels/${hotel.id}/book`)}
                 >
                   Book This Hotel
                 </button>
