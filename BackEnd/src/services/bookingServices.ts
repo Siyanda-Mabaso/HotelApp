@@ -102,18 +102,26 @@ export const findAllBookings = async (): Promise<Booking[]> => {
 };
 
 // Get bookings for one user
-export const findBookingsByUserId = async (
-  userId: number,
-): Promise<Booking[]> => {
-  const { rows } = await query(
-    `SELECT * FROM bookings
-         WHERE user_id = $1
-         ORDER BY created_at DESC`,
-    [userId],
-  );
 
-  return rows;
+export const findBookingsByUserId = async (userId: number) => {
+    const { rows } = await query(
+        `SELECT
+            bookings.*,
+            hotels.name AS hotel_name,
+            hotels.city AS hotel_city,
+            hotels.country AS hotel_country,
+            rooms.room_type AS room_type
+         FROM bookings
+         JOIN hotels ON bookings.hotel_id = hotels.id
+         JOIN rooms ON bookings.room_id = rooms.id
+         WHERE bookings.user_id = $1
+         ORDER BY bookings.created_at DESC`,
+        [userId]
+    );
+
+    return rows;
 };
+
 
 // Get one booking by ID
 export const findBookingById = async (id: number): Promise<Booking | null> => {
