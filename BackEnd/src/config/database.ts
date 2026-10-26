@@ -38,14 +38,16 @@ const client = await pool.connect();
 };
 
 // Check and create database tables
-export const dbCheckTables = async (): Promise<void> => {
-await testDbConnection();
 
-await createUserTable();
-await createHotelTable();
-await createBookingTable();
-await createReviewTable();
-await createFavouriteTable();
-await createRoomTable();
-console.log("Database tables checked successfully");
+export const dbCheckTables = async (): Promise<void> => {
+    await testDbConnection();
+
+    await createUserTable();
+    await createHotelTable();
+    await createRoomTable();
+    await createBookingTable();
+    await createReviewTable();
+    await createFavouriteTable();
+
+    console.log("Database tables checked successfully");
 };
