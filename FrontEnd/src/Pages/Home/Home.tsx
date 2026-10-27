@@ -1,60 +1,28 @@
-
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+
+import type { RootState, AppDispatch } from "../../Store/store";
+import { fetchHotels } from "../../ReduxSlice/hotelSlice";
 
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
 
 import styles from "./Home.module.css";
 
-interface Hotel {
-  id: number;
-  name: string;
-  description: string;
-  address: string;
-  city: string;
-  country: string;
-  star_rating: number;
-  price_per_night: number;
-}
-
 const Home = () => {
-  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { hotels, isLoading, error } = useSelector(
+    (state: RootState) => state.hotels,
+  );
+
+  // Search is local UI state, so it can remain here.
   const [search, setSearch] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchHotels = async () => {
-      try {
-        const response = await axios.get("/api/hotels");
-
-        const data = Array.isArray(response.data)
-          ? response.data
-          : response.data.hotels;
-
-        if (Array.isArray(data)) {
-          setHotels(data);
-        } else {
-          setError("Unable to read the hotel listings.");
-        }
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          setError(
-            error.response?.data?.message ||
-              "Unable to load hotels. Please try again.",
-          );
-        } else {
-          setError("Something went wrong while loading hotels.");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    void fetchHotels();
-  }, []);
+    void dispatch(fetchHotels());
+  }, [dispatch]);
 
   const filteredHotels = useMemo(() => {
     const searchText = search.trim().toLowerCase();
@@ -80,8 +48,8 @@ const Home = () => {
             <h1>Find your perfect place to stay.</h1>
 
             <p className={styles.heroText}>
-              Discover comfortable stays, explore new destinations, and
-              find the right accommodation for your next trip.
+              Discover comfortable stays, explore new destinations, and find the
+              right accommodation for your next trip.
             </p>
 
             <a href="#hotel-listings" className={styles.heroButton}>
@@ -127,9 +95,10 @@ const Home = () => {
           {!isLoading && error && (
             <div className={styles.errorState}>
               <p>{error}</p>
+
               <button
                 type="button"
-                onClick={() => window.location.reload()}
+                onClick={() => void dispatch(fetchHotels())}
               >
                 Try Again
               </button>
@@ -174,9 +143,8 @@ const Home = () => {
                     <span className={styles.imageIcon} aria-hidden="true">
                       ⌂
                     </span>
-                    <span className={styles.imageLabel}>
-                      PARADISE STAYS
-                    </span>
+
+                    <span className={styles.imageLabel}>PARADISE STAYS</span>
                   </div>
 
                   <div className={styles.hotelInfo}>
@@ -189,13 +157,11 @@ const Home = () => {
                     </div>
 
                     <p className={styles.location}>
-                      <span aria-hidden="true">⌖</span>{" "}
-                      {hotel.city}, {hotel.country}
+                      <span aria-hidden="true">⌖</span> {hotel.city},{" "}
+                      {hotel.country}
                     </p>
 
-                    <p className={styles.description}>
-                      {hotel.description}
-                    </p>
+                    <p className={styles.description}>{hotel.description}</p>
 
                     <div className={styles.cardFooter}>
                       <div className={styles.price}>
@@ -205,6 +171,7 @@ const Home = () => {
                             "en-ZA",
                           )}
                         </strong>
+
                         <span> / night</span>
                       </div>
 

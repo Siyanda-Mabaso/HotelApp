@@ -1,66 +1,170 @@
-
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+
+import type { RootState, AppDispatch } from "../../Store/store";
+
+import {
+  fetchHotels,
+  updateHotel,
+  deleteHotel,
+  clearHotelError,
+  type Hotel,
+} from "../../ReduxSlice/hotelSlice";
 
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
 
 import styles from "./ViewHotels.module.css";
 
-interface Hotel {
-  id: number;
+interface HotelFormData {
   name: string;
   description: string;
   address: string;
   city: string;
   country: string;
-  star_rating: number;
-  price_per_night: number;
+  star_rating: string;
+  price_per_night: string;
 }
 
+const emptyForm: HotelFormData = {
+  name: "",
+  description: "",
+  address: "",
+  city: "",
+  country: "",
+  star_rating: "",
+  price_per_night: "",
+};
+
 const ViewHotels = () => {
-  const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { hotels, isLoading, error, isSaving, mutationError } = useSelector(
+    (state: RootState) => state.hotels,
+  );
+
+  const { token, user } = useSelector((state: RootState) => state.login);
+
+  const [editingHotel, setEditingHotel] = useState<Hotel | null>(null);
+  const [formData, setFormData] = useState<HotelFormData>(emptyForm);
+  const [formError, setFormError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-    const fetchHotels = async () => {
-      try {
-        setIsLoading(true);
-        setError("");
-
-        const response = await axios.get("/api/hotels");
-
-        // Support either an array or an object containing a hotels array.
-        const hotelData = Array.isArray(response.data)
-          ? response.data
-          : response.data.hotels;
-
-        if (Array.isArray(hotelData)) {
-          setHotels(hotelData);
-        } else {
-          setError("The server returned an unexpected hotel list.");
-        }
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          setError(
-            error.response?.data?.message ||
-              "Unable to load hotels. Please try again.",
-          );
-        } else {
-          setError("Something went wrong while loading hotels.");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchHotels();
-  }, []);
+    void dispatch(fetchHotels());
+  }, [dispatch]);
 
   const formatPrice = (price: number) =>
     `R ${Number(price).toLocaleString("en-ZA")}`;
+
+  const handleEditClick = (hotel: Hotel) => {
+    setEditingHotel(hotel);
+    setFormData({
+      name: hotel.name,
+      description: hotel.description,
+      address: hotel.address,
+      city: hotel.city,
+      country: hotel.country,
+      star_rating: String(hotel.star_rating),
+      price_per_night: String(hotel.price_per_night),
+    });
+    setFormError("");
+    setSuccessMessage("");
+    dispatch(clearHotelError());
+  };
+
+  const handleFormChange = (field: keyof HotelFormData, value: string) => {
+    setFormData((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+    setFormError("");
+    setSuccessMessage("");
+    dispatch(clearHotelError());
+  };
+
+  const handleUpdate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!editingHotel) return;
+
+    if (!token || user?.role !== "admin") {
+      setFormError("Only logged-in administrators can edit hotels.");
+      return;
+    }
+
+    const starRating = Number(formData.star_rating);
+    const pricePerNight = Number(formData.price_per_night);
+
+    if (!Number.isInteger(starRating) || starRating < 1 || starRating > 5) {
+      setFormError("Please select a valid star rating.");
+      return;
+    }
+
+    if (!Number.isFinite(pricePerNight) || pricePerNight < 0) {
+      setFormError("Please enter a valid price per night.");
+      return;
+    }
+
+    setFormError("");
+    setSuccessMessage("");
+    dispatch(clearHotelError());
+
+    try {
+      await dispatch(
+        updateHotel({
+          id: editingHotel.id,
+          token,
+          hotel: {
+            name: formData.name.trim(),
+            description: formData.description.trim(),
+            address: formData.address.trim(),
+            city: formData.city.trim(),
+            country: formData.country.trim(),
+            star_rating: starRating,
+            price_per_night: pricePerNight,
+          },
+        }),
+      ).unwrap();
+
+      setEditingHotel(null);
+      setFormData(emptyForm);
+      setSuccessMessage("Hotel updated successfully!");
+    } catch {
+      // The error is stored in Redux as mutationError.
+    }
+  };
+
+  const handleDelete = async (hotel: Hotel) => {
+    if (!token || user?.role !== "admin") {
+      setFormError("Only logged-in administrators can delete hotels.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${hotel.name}"?`,
+    );
+
+    if (!confirmed) return;
+
+    setFormError("");
+    setSuccessMessage("");
+    dispatch(clearHotelError());
+
+    try {
+      await dispatch(
+        deleteHotel({
+          id: hotel.id,
+          token,
+        }),
+      ).unwrap();
+
+      setSuccessMessage(`"${hotel.name}" was deleted successfully.`);
+    } catch {
+      // The error is stored in Redux as mutationError.
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -81,10 +185,7 @@ const ViewHotels = () => {
               </p>
             </div>
 
-            <Link
-              to="/admin/hotels/add"
-              className={styles.addButton}
-            >
+            <Link to="/admin/hotels/add" className={styles.addButton}>
               + Add Hotel
             </Link>
           </div>
@@ -98,8 +199,28 @@ const ViewHotels = () => {
             </span>
           </div>
 
+          {successMessage && (
+            <p className={styles.successMessage} role="status">
+              {successMessage}
+            </p>
+          )}
+
+          {formError && (
+            <p className={styles.errorMessage} role="alert">
+              {formError}
+            </p>
+          )}
+
+          {mutationError && (
+            <p className={styles.errorMessage} role="alert">
+              {mutationError}
+            </p>
+          )}
+
           {isLoading && (
-            <p className={styles.message}>Loading hotels...</p>
+            <p className={styles.message} role="status">
+              Loading hotels...
+            </p>
           )}
 
           {!isLoading && error && (
@@ -108,7 +229,7 @@ const ViewHotels = () => {
               <button
                 type="button"
                 className={styles.retryButton}
-                onClick={() => window.location.reload()}
+                onClick={() => void dispatch(fetchHotels())}
               >
                 Try Again
               </button>
@@ -119,10 +240,7 @@ const ViewHotels = () => {
             <div className={styles.emptyState}>
               <h3>No hotels available yet</h3>
               <p>Add your first hotel to display it here.</p>
-              <Link
-                to="/admin/hotels/add"
-                className={styles.addButton}
-              >
+              <Link to="/admin/hotels/add" className={styles.addButton}>
                 Add Your First Hotel
               </Link>
             </div>
@@ -146,17 +264,33 @@ const ViewHotels = () => {
                       {hotel.address}, {hotel.city}, {hotel.country}
                     </p>
 
-                    <p className={styles.description}>
-                      {hotel.description}
-                    </p>
+                    <p className={styles.description}>{hotel.description}</p>
 
                     <div className={styles.cardFooter}>
                       <div>
-                        <strong>
-                          {formatPrice(hotel.price_per_night)}
-                        </strong>
+                        <strong>{formatPrice(hotel.price_per_night)}</strong>
                         <span className={styles.perNight}> / night</span>
                       </div>
+                    </div>
+
+                    <div className={styles.managementActions}>
+                      <button
+                        type="button"
+                        className={styles.editButton}
+                        onClick={() => handleEditClick(hotel)}
+                        disabled={isSaving}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        className={styles.deleteButton}
+                        onClick={() => void handleDelete(hotel)}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? "Please wait..." : "Delete"}
+                      </button>
                     </div>
                   </div>
                 </article>
@@ -165,6 +299,176 @@ const ViewHotels = () => {
           )}
         </section>
       </main>
+
+      {editingHotel && (
+        <div
+          className={styles.modalOverlay}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isSaving) {
+              setEditingHotel(null);
+              setFormError("");
+              dispatch(clearHotelError());
+            }
+          }}
+        >
+          <section
+            className={styles.editModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-hotel-title"
+          >
+            <div className={styles.modalHeading}>
+              <div>
+                <p className={styles.eyebrow}>PARADISE MANAGEMENT</p>
+                <h2 id="edit-hotel-title">Edit Hotel</h2>
+              </div>
+
+              <button
+                type="button"
+                className={styles.closeButton}
+                onClick={() => {
+                  setEditingHotel(null);
+                  setFormError("");
+                  dispatch(clearHotelError());
+                }}
+                disabled={isSaving}
+                aria-label="Close edit form"
+              >
+                ×
+              </button>
+            </div>
+
+            <form className={styles.editForm} onSubmit={handleUpdate}>
+              <label>
+                Hotel Name
+                <input
+                  value={formData.name}
+                  onChange={(event) =>
+                    handleFormChange("name", event.target.value)
+                  }
+                  required
+                />
+              </label>
+
+              <label>
+                Description
+                <textarea
+                  value={formData.description}
+                  onChange={(event) =>
+                    handleFormChange("description", event.target.value)
+                  }
+                  rows={4}
+                  required
+                />
+              </label>
+
+              <label>
+                Street Address
+                <input
+                  value={formData.address}
+                  onChange={(event) =>
+                    handleFormChange("address", event.target.value)
+                  }
+                  required
+                />
+              </label>
+
+              <div className={styles.editFormRow}>
+                <label>
+                  City
+                  <input
+                    value={formData.city}
+                    onChange={(event) =>
+                      handleFormChange("city", event.target.value)
+                    }
+                    required
+                  />
+                </label>
+
+                <label>
+                  Country
+                  <input
+                    value={formData.country}
+                    onChange={(event) =>
+                      handleFormChange("country", event.target.value)
+                    }
+                    required
+                  />
+                </label>
+              </div>
+
+              <div className={styles.editFormRow}>
+                <label>
+                  Star Rating
+                  <select
+                    value={formData.star_rating}
+                    onChange={(event) =>
+                      handleFormChange("star_rating", event.target.value)
+                    }
+                    required
+                  >
+                    <option value="">Select rating</option>
+                    <option value="1">1 Star</option>
+                    <option value="2">2 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="5">5 Stars</option>
+                  </select>
+                </label>
+
+                <label>
+                  Price Per Night (R)
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price_per_night}
+                    onChange={(event) =>
+                      handleFormChange("price_per_night", event.target.value)
+                    }
+                    required
+                  />
+                </label>
+              </div>
+
+              {formError && (
+                <p className={styles.errorMessage} role="alert">
+                  {formError}
+                </p>
+              )}
+
+              {mutationError && (
+                <p className={styles.errorMessage} role="alert">
+                  {mutationError}
+                </p>
+              )}
+
+              <div className={styles.modalActions}>
+                <button
+                  type="submit"
+                  className={styles.editButton}
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </button>
+
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={() => {
+                    setEditingHotel(null);
+                    setFormError("");
+                    dispatch(clearHotelError());
+                  }}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
 
       <Footer />
     </div>

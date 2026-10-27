@@ -1,10 +1,10 @@
-
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
 
-import type { RootState } from "../../Store/store";
+import type { RootState, AppDispatch } from "../../Store/store";
+
+import { createHotel, clearHotelError } from "../../ReduxSlice/hotelSlice";
 
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
@@ -34,83 +34,79 @@ const initialFormData: HotelFormData = {
 };
 
 const AddHotel = () => {
-  const [formData, setFormData] =
-    useState<HotelFormData>(initialFormData);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [formData, setFormData] = useState<HotelFormData>(initialFormData);
+
+  const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
 
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
 
-  const token = useSelector(
-    (state: RootState) => state.login.token,
+  const { token, user } = useSelector((state: RootState) => state.login);
+
+  const { isSaving, mutationError } = useSelector(
+    (state: RootState) => state.hotels,
   );
 
-  const user = useSelector(
-    (state: RootState) => state.login.user,
-  );
-
-  const handleChange = (
-    field: keyof HotelFormData,
-    value: string,
-  ) => {
+  const handleChange = (field: keyof HotelFormData, value: string) => {
     setFormData((previous) => ({
       ...previous,
       [field]: value,
     }));
 
-    setError("");
+    setFormError("");
     setSuccess("");
+    dispatch(clearHotelError());
   };
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    setError("");
+    setFormError("");
     setSuccess("");
+    dispatch(clearHotelError());
 
     if (!token || !user) {
-      setError("Please log in before adding a hotel.");
+      setFormError("Please log in before adding a hotel.");
       return;
     }
 
     if (user.role !== "admin") {
-      setError("Access denied. Only administrators can add hotels.");
+      setFormError("Access denied. Only administrators can add hotels.");
       return;
     }
 
-    setIsLoading(true);
+    const starRating = Number(formData.star_rating);
+    const pricePerNight = Number(formData.price_per_night);
+
+    if (!Number.isInteger(starRating) || starRating < 1 || starRating > 5) {
+      setFormError("Please select a valid hotel star rating.");
+      return;
+    }
+
+    if (!Number.isFinite(pricePerNight) || pricePerNight < 0) {
+      setFormError("Please enter a valid price per night.");
+      return;
+    }
 
     try {
-      await axios.post(
-        "/api/hotels",
-        {
-          ...formData,
-          star_rating: Number(formData.star_rating),
-          price_per_night: Number(formData.price_per_night),
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      await dispatch(
+        createHotel({
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          country: formData.country.trim(),
+          star_rating: starRating,
+          price_per_night: pricePerNight,
+          token,
+        }),
+      ).unwrap();
 
       setSuccess("Hotel added successfully!");
       setFormData({ ...initialFormData });
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        setError(
-          error.response?.data?.message ||
-            "Unable to add hotel. Please try again.",
-        );
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
-    } finally {
-      setIsLoading(false);
+    } catch {
+      // Redux stores the API error in hotels.mutationError.
     }
   };
 
@@ -125,9 +121,7 @@ const AddHotel = () => {
           </Link>
 
           <h1>Add a Hotel</h1>
-          <p>
-            Enter the accommodation details to list it on Paradise.
-          </p>
+          <p>Enter the accommodation details to list it on Paradise.</p>
         </div>
 
         <form className={styles.formCard} onSubmit={handleSubmit}>
@@ -144,6 +138,7 @@ const AddHotel = () => {
 
           <div className={styles.inputGroup}>
             <label htmlFor="description">Description</label>
+
             <textarea
               id="description"
               name="description"
@@ -214,26 +209,34 @@ const AddHotel = () => {
               type="number"
               placeholder="e.g. 1200"
               value={formData.price_per_night}
-              onChange={(value) =>
-                handleChange("price_per_night", value)
-              }
+              onChange={(value) => handleChange("price_per_night", value)}
               required
             />
           </div>
 
-          {error && (
-            <p className={styles.errorMessage}>{error}</p>
+          {formError && (
+            <p className={styles.errorMessage} role="alert">
+              {formError}
+            </p>
+          )}
+
+          {mutationError && (
+            <p className={styles.errorMessage} role="alert">
+              {mutationError}
+            </p>
           )}
 
           {success && (
-            <p className={styles.successMessage}>{success}</p>
+            <p className={styles.successMessage} role="status">
+              {success}
+            </p>
           )}
 
           <div className={styles.formActions}>
             <Button
-              text={isLoading ? "Adding Hotel..." : "Add Hotel"}
+              text={isSaving ? "Adding Hotel..." : "Add Hotel"}
               type="submit"
-              disabled={isLoading}
+              disabled={isSaving}
             />
 
             <Button
