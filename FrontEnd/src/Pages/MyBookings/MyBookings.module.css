@@ -210,3 +210,8 @@
         flex-direction: column;
     }
 }
+.location {
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 14px;
+}
