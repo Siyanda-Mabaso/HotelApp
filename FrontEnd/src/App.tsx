@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import SignUp from "./Pages/SignUp/SignUp";
@@ -12,6 +11,7 @@ import HotelDetails from "./Pages/HotelDetails/HotelDetails";
 import Booking from "./Pages/Booking/Booking";
 import MyBookings from "./Pages/MyBookings/MyBookings";
 import Profile from "./Pages/Profile/Profile";
+import ManageRooms from "./Pages/ManageRooms/ManageRooms";
 
 const App = () => {
   return (
@@ -32,6 +32,11 @@ const App = () => {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/hotels/add" element={<AddHotel />} />
           <Route path="/admin/hotels" element={<ViewHotels />} />
+
+          <Route
+            path="/admin/hotels/:hotelId/rooms"
+            element={<ManageRooms />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>
