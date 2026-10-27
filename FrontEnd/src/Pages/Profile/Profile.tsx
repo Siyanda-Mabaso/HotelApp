@@ -1,76 +1,134 @@
 
-import { useSelector } from "react-redux";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import type { RootState } from "../../Store/store";
-import Navbar from "../../Components/Navbar/Navbar";
-import Footer from "../../Components/Footer/Footer";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState, AppDispatch } from "../../Store/store";
+import {
+    fetchFavourites,
+    removeFavourite,
+} from "../../ReduxSlice/favouriteSlice"
 import styles from "./Profile.module.css";
 
-const Profile = () => {
-  const user = useSelector((state: RootState) => state.login.user);
+function Profile() {
+    const dispatch = useDispatch<AppDispatch>();
 
-  return (
-    <>
-      <Navbar />
+    const { token, user } = useSelector(
+        (state: RootState) => state.login
+    );
 
-      <main className={styles.page}>
-        <section className={styles.heading}>
-          <p className={styles.eyebrow}>YOUR PARADISE ACCOUNT</p>
-          <h1>My Profile</h1>
-          <p>Manage your personal information and favourite hotels.</p>
-        </section>
+    const { favourites, isLoading, error } = useSelector(
+        (state: RootState) => state.favourites
+    );
 
-        <section className={styles.profileCard}>
-          <div className={styles.avatar}>
-            {user?.name?.charAt(0).toUpperCase() || "U"}
-          </div>
+    useEffect(() => {
+        if (token) {
+            dispatch(fetchFavourites(token));
+        }
+    }, [dispatch, token]);
 
-          <div className={styles.userInfo}>
-            <h2>{user?.name || "Guest User"}</h2>
-            <p>{user?.email || "No email available"}</p>
-            <span className={styles.role}>
-              {user?.role || "Customer"}
-            </span>
-          </div>
-        </section>
+    const handleRemoveFavourite = (hotelId: number) => {
+        if (token) {
+            dispatch(removeFavourite({ hotelId, token }));
+        }
+    };
 
-        <section className={styles.section}>
-          <div className={styles.sectionHeading}>
-            <div>
-              <h2>My Favourites</h2>
-              <p>Hotels you have saved for a future stay.</p>
-            </div>
-            <span className={styles.heart}>♡</span>
-          </div>
+    if (!user || !token) {
+        return (
+            <main className={styles.profile}>
+                <h1>My Profile</h1>
+                <p>Please log in to view your profile and favourites.</p>
+                <Link to="/login">Go to Login</Link>
+            </main>
+        );
+    }
 
-          <div className={styles.empty}>
-            <span className={styles.emptyHeart}>♡</span>
-            <h3>No favourite hotels yet</h3>
-            <p>
-              Save hotels you love and they will appear here.
-            </p>
-            <Link to="/home" className={styles.button}>
-              Explore hotels
-            </Link>
-          </div>
-        </section>
+    return (
+        <main className={styles.profile}>
+            <section className={styles.profileCard}>
+                <h1>My Profile</h1>
 
-        <section className={styles.section}>
-          <div className={styles.sectionHeading}>
-            <div>
-              <h2>My Bookings</h2>
-              <p>View and manage your reservations.</p>
-            </div>
-            <Link to="/my-bookings" className={styles.textLink}>
-              View bookings →
-            </Link>
-          </div>
-        </section>
-      </main>
+                <div className={styles.userDetails}>
+                    <p>
+                        <strong>Name:</strong> {user.name}
+                    </p>
+                    <p>
+                        <strong>Email:</strong> {user.email}
+                    </p>
+                    <p>
+                        <strong>Role:</strong> {user.role}
+                    </p>
+                </div>
 
-      <Footer />
-    </>
-  );
-};
+                <Link to="/my-bookings" className={styles.bookingsLink}>
+                    View My Bookings
+                </Link>
+            </section>
+
+            <section className={styles.favouritesSection}>
+                <h2>My Favourite Hotels</h2>
+                <p>Hotels you save will appear here.</p>
+
+                {isLoading && <p>Loading your favourites...</p>}
+
+                {error && (
+                    <p className={styles.error} role="alert">
+                        {error}
+                    </p>
+                )}
+
+                {!isLoading && !error && favourites.length === 0 && (
+                    <p>You have not saved any favourite hotels yet.</p>
+                )}
+
+                <div className={styles.favouritesGrid}>
+                    {favourites.map((favourite) => (
+                        <article
+                            key={favourite.id}
+                            className={styles.favouriteCard}
+                        >
+                            <div className={styles.hotelInfo}>
+                                <h3>{favourite.hotel_name}</h3>
+
+                                <p>
+                                    {favourite.city}, {favourite.country}
+                                </p>
+
+                                <p>{favourite.address}</p>
+
+                                <p>
+                                    ⭐ {favourite.star_rating} stars
+                                </p>
+
+                                <p>
+                                    R{Number(favourite.price_per_night).toFixed(2)}
+                                    {" "}per night
+                                </p>
+                            </div>
+
+                            <div className={styles.cardActions}>
+                                <Link
+                                    to={`/hotels/${favourite.hotel_id}`}
+                                    className={styles.viewHotelLink}
+                                >
+                                    View Hotel
+                                </Link>
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleRemoveFavourite(favourite.hotel_id)
+                                    }
+                                    className={styles.removeButton}
+                                >
+                                    Remove Favourite
+                                </button>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            </section>
+        </main>
+    );
+}
 
 export default Profile;
