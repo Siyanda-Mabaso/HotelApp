@@ -7,6 +7,7 @@
   color: #183b32;
 }
 
+/* Page heading */
 .heading {
   margin-bottom: 32px;
 }
@@ -27,6 +28,7 @@
   color: #64748b;
 }
 
+/* Profile card */
 .profileCard {
   display: flex;
   align-items: center;
@@ -59,6 +61,7 @@
 .userInfo p {
   margin: 0 0 10px;
   color: #64748b;
+  overflow-wrap: anywhere;
 }
 
 .role {
@@ -71,6 +74,7 @@
   text-transform: capitalize;
 }
 
+/* General sections */
 .section {
   margin-top: 28px;
   padding: 28px;
@@ -84,6 +88,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  margin-bottom: 24px;
 }
 
 .sectionHeading h2 {
@@ -99,8 +104,107 @@
 .emptyHeart {
   color: #d94f70;
   font-size: 36px;
+  flex-shrink: 0;
 }
 
+/* Favourite hotels grid */
+.favouritesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 22px;
+  margin-top: 24px;
+}
+
+.favouriteCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.favouriteCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(24, 59, 50, 0.08);
+}
+
+.hotelInfo h3 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  color: #183b32;
+}
+
+.hotelInfo p {
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.hotelPrice {
+  margin-top: 14px !important;
+  color: #183b32 !important;
+  font-size: 17px !important;
+  font-weight: 700;
+}
+
+.hotelPrice span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* Favourite card buttons */
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.viewHotelLink {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #183b32;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.viewHotelLink:hover {
+  background: #285849;
+}
+
+.removeButton {
+  padding: 10px 14px;
+  border: 1px solid #f0c7ce;
+  border-radius: 8px;
+  background: #fff5f6;
+  color: #b42340;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.removeButton:hover {
+  background: #ffe5e9;
+}
+
+.removeButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Empty favourites state */
 .empty {
   padding: 36px 16px;
   text-align: center;
@@ -119,13 +223,19 @@
   color: #64748b;
 }
 
+/* Main buttons and links */
 .button {
   display: inline-block;
   padding: 12px 20px;
+  border: none;
   border-radius: 8px;
   background: #183b32;
   color: white;
+  font: inherit;
+  font-weight: 600;
   text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .button:hover {
@@ -140,4 +250,60 @@
 
 .textLink:hover {
   text-decoration: underline;
+}
+
+/* Loading, errors and messages */
+.loading,
+.message {
+  padding: 20px 0;
+  color: #64748b;
+  text-align: center;
+}
+
+.error {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border: 1px solid #f0c7ce;
+  border-radius: 8px;
+  background: #fff5f6;
+  color: #b42340;
+}
+
+/* Small screens */
+@media (max-width: 600px) {
+  .page {
+    padding: 32px 16px 48px;
+  }
+
+  .heading h1 {
+    font-size: 29px;
+  }
+
+  .profileCard {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 22px;
+  }
+
+  .section {
+    padding: 20px;
+  }
+
+  .sectionHeading {
+    align-items: flex-start;
+  }
+
+  .favouritesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .cardActions {
+    flex-direction: column;
+  }
+
+  .viewHotelLink,
+  .removeButton {
+    width: 100%;
+    box-sizing: border-box;
+  }
 }

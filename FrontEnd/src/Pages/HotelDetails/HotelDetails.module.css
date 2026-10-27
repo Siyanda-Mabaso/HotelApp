@@ -194,6 +194,58 @@
   color: #687a77;
 }
 
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.favouriteButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #d94f70;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.favouriteButton:hover {
+  background: #fff0f3;
+  transform: scale(1.08);
+}
+
+.favouriteActive {
+  border-color: #f0c7ce;
+  background: #fff0f3;
+  color: #d94f70;
+}
+
+.favouriteButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.favouriteMessage {
+  margin-top: 16px;
+  color: #23634b;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .actionButtons {
+    flex-wrap: wrap;
+  }
+}
+ 
+
 @media (max-width: 600px) {
   .heroImage {
     min-height: 200px;
