@@ -23,6 +23,9 @@ const Navbar = () => {
         </Link>
         <Link to="/my-bookings" className={styles.link}>
         My Bookings</Link>
+        <Link to="/profile" className={styles.link}>
+          My Profile
+        </Link>
       </div>
     </nav>
   );

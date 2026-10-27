@@ -11,6 +11,7 @@ import Home from "./Pages/Home/Home";
 import HotelDetails from "./Pages/HotelDetails/HotelDetails";
 import Booking from "./Pages/Booking/Booking";
 import MyBookings from "./Pages/MyBookings/MyBookings";
+import Profile from "./Pages/Profile/Profile";
 
 const App = () => {
   return (
@@ -24,7 +25,7 @@ const App = () => {
         <Route path="/hotels/:id" element={<HotelDetails />} />
         <Route path="/hotels/:id/book" element={<Booking />} />
         <Route path="/my-bookings" element={<MyBookings />} />
-
+        <Route path="/profile" element={<Profile />} />
 
         {/* Admin-only pages */}
         <Route element={<ProtectedRoute />}>
