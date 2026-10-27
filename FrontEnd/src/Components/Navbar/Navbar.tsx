@@ -21,7 +21,8 @@ const Navbar = () => {
         <Link to="/signup" className={styles.signupButton}>
           Sign Up
         </Link>
-        <Link to="/my-bookings">My Bookings</Link>
+        <Link to="/my-bookings" className={styles.link}>
+        My Bookings</Link>
       </div>
     </nav>
   );
