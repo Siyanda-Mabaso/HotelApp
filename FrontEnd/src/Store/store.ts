@@ -6,6 +6,7 @@ import loginReducer, { logout } from "../ReduxSlice/LoginSlice";
 import favouriteReducer from "../ReduxSlice/favouriteSlice";
 import hotelReducer from "../ReduxSlice/hotelSlice";
 import roomReducer from "../ReduxSlice/roomSlice";
+import bookingReducer from "../ReduxSlice/bookingSlice";
 
 const authListener = createListenerMiddleware();
 
@@ -23,6 +24,7 @@ const store = configureStore({
     favourites: favouriteReducer,
     hotels: hotelReducer,
     rooms: roomReducer,
+    bookings: bookingReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().prepend(authListener.middleware),
