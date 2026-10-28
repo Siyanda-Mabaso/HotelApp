@@ -7,6 +7,7 @@ import favouriteReducer from "../ReduxSlice/favouriteSlice";
 import hotelReducer from "../ReduxSlice/hotelSlice";
 import roomReducer from "../ReduxSlice/roomSlice";
 import bookingReducer from "../ReduxSlice/bookingSlice";
+import imageReducer from "../ReduxSlice/imageSlice";
 
 const authListener = createListenerMiddleware();
 
@@ -25,6 +26,7 @@ const store = configureStore({
     hotels: hotelReducer,
     rooms: roomReducer,
     bookings: bookingReducer,
+    images: imageReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().prepend(authListener.middleware),
