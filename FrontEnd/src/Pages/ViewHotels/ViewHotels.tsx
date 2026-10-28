@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link ,useNavigate} from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { RootState, AppDispatch } from "../../Store/store";
@@ -38,6 +38,7 @@ const emptyForm: HotelFormData = {
 };
 
 const ViewHotels = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
   const { hotels, isLoading, error, isSaving, mutationError } = useSelector(
@@ -291,6 +292,15 @@ const ViewHotels = () => {
                       >
                         {isSaving ? "Please wait..." : "Delete"}
                       </button>
+                      
+<button
+  type="button"
+  className={styles.manageRoomsButton}
+  onClick={() => navigate(`/admin/hotels/${hotel.id}/rooms`)}
+>
+  Manage Rooms
+</button>
+
                     </div>
                   </div>
                 </article>

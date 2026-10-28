@@ -128,3 +128,128 @@
   font-size: 14px;
   font-weight: 600;
 }
+.roomSection {
+  margin-top: 30px;
+  padding-top: 26px;
+  border-top: 1px solid #e5e7ef;
+}
+
+.roomSectionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.roomSectionHeading h2 {
+  margin: 0 0 8px;
+  font-size: 21px;
+}
+
+.roomSectionHeading p {
+  margin: 0;
+  color: #73778c;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.addRoomButton {
+  padding: 11px 15px;
+  border: 1px solid #625bd7;
+  border-radius: 8px;
+  background: #f3f2ff;
+  color: #514ac1;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.addRoomButton:hover:not(:disabled) {
+  background: #e7e5ff;
+}
+
+.addRoomButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.noRoomsMessage {
+  padding: 18px;
+  border: 1px dashed #d7d9e7;
+  border-radius: 10px;
+  color: #73778c;
+  background: #fafaff;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.roomCard {
+  margin-bottom: 18px;
+  padding: 20px;
+  border: 1px solid #e1e2ee;
+  border-radius: 12px;
+  background: #fafaff;
+}
+
+.roomCardHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.roomCardHeading h3 {
+  margin: 0;
+  font-size: 17px;
+  color: #292d43;
+}
+
+.removeRoomButton {
+  padding: 8px 12px;
+  border: 1px solid #f0c9cd;
+  border-radius: 7px;
+  background: #fff1f2;
+  color: #b52f3b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.removeRoomButton:hover:not(:disabled) {
+  background: #ffe1e4;
+}
+
+.removeRoomButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.roomCard .inputGroup {
+  margin-bottom: 16px;
+}
+
+.roomCard .inputGroup:last-child {
+  margin-bottom: 0;
+}
+
+.roomCard input,
+.roomCard textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .roomSectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .roomCard {
+    padding: 15px;
+  }
+}

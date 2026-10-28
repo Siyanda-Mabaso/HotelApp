@@ -242,3 +242,17 @@
 .retryButton:hover {
   background-color: #006666;
 }
+.manageRoomsButton {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: #e0f2fe;
+  color: #075985;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.manageRoomsButton:hover {
+  background-color: #bae6fd;
+}
