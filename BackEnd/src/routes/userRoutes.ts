@@ -7,7 +7,9 @@ import {
     getAllUsers,
     getUsersById,
     updateUserById,
-    deleteUserById
+    deleteUserById,
+    getMyProfile,
+    updateMyProfile
 } from "../controllers/userControllers";
 
 import {
@@ -21,8 +23,14 @@ const router = Router();
 router.post("/register", register);
 router.post("/login", login);
 
-// Authenticated routes
+// Authenticated profile routes
+router.get("/users/me", protect, getMyProfile);
+router.put("/users/me", protect, updateMyProfile);
+
+// Admin-only user listing
 router.get("/users", protect, adminOnly, getAllUsers);
+
+// User-specific routes
 router.get("/users/:id", protect, getUsersById);
 router.put("/users/:id", protect, updateUserById);
 
