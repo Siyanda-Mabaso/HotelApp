@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link ,useNavigate} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-
 import type { RootState, AppDispatch } from "../../Store/store";
 
 import {
@@ -12,9 +11,16 @@ import {
   type Hotel,
 } from "../../ReduxSlice/hotelSlice";
 
+import {
+  fetchHotelImages,
+  addHotelImage,
+  deleteHotelImage,
+  clearImageErrors,
+  type HotelImage,
+} from "../../ReduxSlice/imageSlice";
+
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
-
 import styles from "./ViewHotels.module.css";
 
 interface HotelFormData {
@@ -47,10 +53,23 @@ const ViewHotels = () => {
 
   const { token, user } = useSelector((state: RootState) => state.login);
 
+  const {
+    images,
+    isLoading: isImagesLoading,
+    isSaving: isImageSaving,
+    error: imageError,
+    mutationError: imageMutationError,
+  } = useSelector((state: RootState) => state.images);
+
   const [editingHotel, setEditingHotel] = useState<Hotel | null>(null);
   const [formData, setFormData] = useState<HotelFormData>(emptyForm);
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  const [managingHotel, setManagingHotel] = useState<Hotel | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageFormError, setImageFormError] = useState("");
+  const [imageSuccessMessage, setImageSuccessMessage] = useState("");
 
   useEffect(() => {
     void dispatch(fetchHotels());
@@ -59,8 +78,11 @@ const ViewHotels = () => {
   const formatPrice = (price: number) =>
     `R ${Number(price).toLocaleString("en-ZA")}`;
 
+  // ---------------- HOTEL MANAGEMENT ----------------
+
   const handleEditClick = (hotel: Hotel) => {
     setEditingHotel(hotel);
+
     setFormData({
       name: hotel.name,
       description: hotel.description,
@@ -70,6 +92,7 @@ const ViewHotels = () => {
       star_rating: String(hotel.star_rating),
       price_per_night: String(hotel.price_per_night),
     });
+
     setFormError("");
     setSuccessMessage("");
     dispatch(clearHotelError());
@@ -80,6 +103,7 @@ const ViewHotels = () => {
       ...previous,
       [field]: value,
     }));
+
     setFormError("");
     setSuccessMessage("");
     dispatch(clearHotelError());
@@ -105,6 +129,17 @@ const ViewHotels = () => {
 
     if (!Number.isFinite(pricePerNight) || pricePerNight < 0) {
       setFormError("Please enter a valid price per night.");
+      return;
+    }
+
+    if (
+      !formData.name.trim() ||
+      !formData.description.trim() ||
+      !formData.address.trim() ||
+      !formData.city.trim() ||
+      !formData.country.trim()
+    ) {
+      setFormError("Please complete all hotel fields.");
       return;
     }
 
@@ -167,6 +202,96 @@ const ViewHotels = () => {
     }
   };
 
+  // ---------------- IMAGE MANAGEMENT ----------------
+
+  const handleManageImages = (hotel: Hotel) => {
+    setManagingHotel(hotel);
+    setImageUrl("");
+    setImageFormError("");
+    setImageSuccessMessage("");
+
+    dispatch(clearImageErrors());
+
+    void dispatch(fetchHotelImages(hotel.id));
+  };
+
+  const handleCloseImageModal = () => {
+    if (isImageSaving) return;
+
+    setManagingHotel(null);
+    setImageUrl("");
+    setImageFormError("");
+    setImageSuccessMessage("");
+    dispatch(clearImageErrors());
+  };
+
+  const handleAddImage = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!managingHotel) return;
+
+    if (!token || user?.role !== "admin") {
+      setImageFormError("Only logged-in administrators can add images.");
+      return;
+    }
+
+    const trimmedUrl = imageUrl.trim();
+
+    if (!/^https?:\/\/\S+$/i.test(trimmedUrl)) {
+      setImageFormError("Please enter a valid image URL.");
+      return;
+    }
+
+    setImageFormError("");
+    setImageSuccessMessage("");
+    dispatch(clearImageErrors());
+
+    try {
+      await dispatch(
+        addHotelImage({
+          hotelId: managingHotel.id,
+          image_url: trimmedUrl,
+          token,
+        }),
+      ).unwrap();
+
+      setImageUrl("");
+      setImageSuccessMessage("Image added successfully!");
+    } catch {
+      // The error is stored in Redux as mutationError.
+    }
+  };
+
+  const handleDeleteImage = async (image: HotelImage) => {
+    if (!token || user?.role !== "admin") {
+      setImageFormError("Only logged-in administrators can delete images.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this image?",
+    );
+
+    if (!confirmed) return;
+
+    setImageFormError("");
+    setImageSuccessMessage("");
+    dispatch(clearImageErrors());
+
+    try {
+      await dispatch(
+        deleteHotelImage({
+          imageId: image.id,
+          token,
+        }),
+      ).unwrap();
+
+      setImageSuccessMessage("Image deleted successfully!");
+    } catch {
+      // The error is stored in Redux as mutationError.
+    }
+  };
+
   return (
     <div className={styles.page}>
       <Navbar />
@@ -195,6 +320,7 @@ const ViewHotels = () => {
         <section className={styles.hotelSection}>
           <div className={styles.sectionHeader}>
             <h2>Hotel Listings</h2>
+
             <span className={styles.hotelCount}>
               {hotels.length} {hotels.length === 1 ? "hotel" : "hotels"}
             </span>
@@ -227,6 +353,7 @@ const ViewHotels = () => {
           {!isLoading && error && (
             <div className={styles.errorBox}>
               <p>{error}</p>
+
               <button
                 type="button"
                 className={styles.retryButton}
@@ -241,6 +368,7 @@ const ViewHotels = () => {
             <div className={styles.emptyState}>
               <h3>No hotels available yet</h3>
               <p>Add your first hotel to display it here.</p>
+
               <Link to="/admin/hotels/add" className={styles.addButton}>
                 Add Your First Hotel
               </Link>
@@ -253,6 +381,7 @@ const ViewHotels = () => {
                 <article className={styles.hotelCard} key={hotel.id}>
                   <div className={styles.hotelTop}>
                     <div className={styles.hotelIcon}>⌂</div>
+
                     <span className={styles.rating}>
                       ★ {hotel.star_rating} / 5
                     </span>
@@ -292,15 +421,24 @@ const ViewHotels = () => {
                       >
                         {isSaving ? "Please wait..." : "Delete"}
                       </button>
-                      
-<button
-  type="button"
-  className={styles.manageRoomsButton}
-  onClick={() => navigate(`/admin/hotels/${hotel.id}/rooms`)}
->
-  Manage Rooms
-</button>
 
+                      <button
+                        type="button"
+                        className={styles.manageRoomsButton}
+                        onClick={() =>
+                          navigate(`/admin/hotels/${hotel.id}/rooms`)
+                        }
+                      >
+                        Manage Rooms
+                      </button>
+
+                      <button
+                        type="button"
+                        className={styles.manageRoomsButton}
+                        onClick={() => handleManageImages(hotel)}
+                      >
+                        Manage Images
+                      </button>
                     </div>
                   </div>
                 </article>
@@ -310,6 +448,7 @@ const ViewHotels = () => {
         </section>
       </main>
 
+      {/* EDIT HOTEL MODAL */}
       {editingHotel && (
         <div
           className={styles.modalOverlay}
@@ -476,6 +615,137 @@ const ViewHotels = () => {
                 </button>
               </div>
             </form>
+          </section>
+        </div>
+      )}
+
+      {/* MANAGE HOTEL IMAGES MODAL */}
+      {managingHotel && (
+        <div
+          className={styles.modalOverlay}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isImageSaving) {
+              handleCloseImageModal();
+            }
+          }}
+        >
+          <section
+            className={styles.editModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="manage-images-title"
+          >
+            <div className={styles.modalHeading}>
+              <div>
+                <p className={styles.eyebrow}>PARADISE MANAGEMENT</p>
+                <h2 id="manage-images-title">Manage Images</h2>
+                <p>{managingHotel.name}</p>
+              </div>
+
+              <button
+                type="button"
+                className={styles.closeButton}
+                onClick={handleCloseImageModal}
+                disabled={isImageSaving}
+                aria-label="Close image management"
+              >
+                ×
+              </button>
+            </div>
+
+            <form className={styles.editForm} onSubmit={handleAddImage}>
+              <label>
+                Image URL
+                <input
+                  type="url"
+                  value={imageUrl}
+                  onChange={(event) => {
+                    setImageUrl(event.target.value);
+                    setImageFormError("");
+                    setImageSuccessMessage("");
+                  }}
+                  placeholder="https://images.unsplash.com/..."
+                  required
+                />
+              </label>
+
+              <button
+                type="submit"
+                className={styles.editButton}
+                disabled={isImageSaving}
+              >
+                {isImageSaving ? "Please wait..." : "Add Image"}
+              </button>
+            </form>
+
+            {imageFormError && (
+              <p className={styles.errorMessage} role="alert">
+                {imageFormError}
+              </p>
+            )}
+
+            {imageError && (
+              <p className={styles.errorMessage} role="alert">
+                {imageError}
+              </p>
+            )}
+
+            {imageMutationError && (
+              <p className={styles.errorMessage} role="alert">
+                {imageMutationError}
+              </p>
+            )}
+
+            {imageSuccessMessage && (
+              <p className={styles.successMessage} role="status">
+                {imageSuccessMessage}
+              </p>
+            )}
+
+            <h3>Hotel Gallery</h3>
+
+            {isImagesLoading && (
+              <p className={styles.message} role="status">
+                Loading images...
+              </p>
+            )}
+
+            {!isImagesLoading && !imageError && images.length === 0 && (
+              <p className={styles.message}>
+                No images have been added to this hotel yet.
+              </p>
+            )}
+
+            {!isImagesLoading && images.length > 0 && (
+              <div className={styles.hotelGrid}>
+                {images.map((image) => (
+                  <article key={image.id} className={styles.hotelCard}>
+                    <img
+                      src={image.image_url}
+                      alt={`${managingHotel.name} accommodation`}
+                      style={{
+                        width: "100%",
+                        height: "160px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                      }}
+                      onError={(event) => {
+                        event.currentTarget.alt = "Unable to load this image";
+                      }}
+                    />
+
+                    <button
+                      type="button"
+                      className={styles.deleteButton}
+                      onClick={() => void handleDeleteImage(image)}
+                      disabled={isImageSaving}
+                    >
+                      {isImageSaving ? "Please wait..." : "Delete Image"}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       )}
