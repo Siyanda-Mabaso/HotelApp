@@ -6,6 +6,10 @@ import {
   updateMyProfile,
   clearProfileMessages,
 } from "../../ReduxSlice/profileSlice";
+import {
+  fetchFavourites,
+  removeFavourite,
+} from "../../ReduxSlice/favouriteSlice";
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
 import Button from "../../Components/Button/Button";
@@ -18,13 +22,25 @@ const Profile = () => {
     (state: RootState) => state.profile,
   );
 
+  const {
+    favourites,
+    isLoading: favouritesLoading,
+    error: favouritesError,
+  } = useSelector((state: RootState) => state.favourites);
+
+  const token = useSelector((state: RootState) => state.login.token);
+
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
   useEffect(() => {
     dispatch(fetchMyProfile());
-  }, [dispatch]);
+
+    if (token) {
+      dispatch(fetchFavourites(token));
+    }
+  }, [dispatch, token]);
 
   useEffect(() => {
     if (profile) {
@@ -47,7 +63,6 @@ const Profile = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     dispatch(clearProfileMessages());
 
     const result = await dispatch(
@@ -60,6 +75,12 @@ const Profile = () => {
     if (updateMyProfile.fulfilled.match(result)) {
       setIsEditing(false);
     }
+  };
+
+  const handleRemoveFavourite = async (hotelId: number) => {
+    if (!token) return;
+
+    await dispatch(removeFavourite({ hotelId, token }));
   };
 
   return (
@@ -170,6 +191,107 @@ const Profile = () => {
               )}
             </>
           )}
+        </section>
+
+        {/* My Favourites */}
+        <section
+          style={{
+            marginTop: "30px",
+            padding: "25px",
+            background: "#ffffff",
+            borderRadius: "12px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+          }}
+        >
+          <h2 style={{ marginTop: 0 }}>My Favourites</h2>
+          <p>Hotels you have saved for later.</p>
+
+          {favouritesLoading && <p>Loading your favourite hotels...</p>}
+
+          {favouritesError && (
+            <p role="alert" style={{ color: "red" }}>
+              {favouritesError}
+            </p>
+          )}
+
+          {!favouritesLoading &&
+            !favouritesError &&
+            favourites.length === 0 && (
+              <p>You have not saved any favourite hotels yet.</p>
+            )}
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            {favourites.map((favourite) => (
+              <article
+                key={favourite.id}
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "10px",
+                  padding: "18px",
+                }}
+              >
+                <h3>{favourite.hotel_name}</h3>
+
+                <p>
+                  {favourite.city}, {favourite.country}
+                </p>
+
+                <p>{favourite.address}</p>
+
+                <p>
+                  {"★".repeat(
+                    Math.max(
+                      0,
+                      Math.min(5, Number(favourite.star_rating) || 0),
+                    ),
+                  )}
+                  {"☆".repeat(
+                    5 -
+                      Math.max(
+                        0,
+                        Math.min(5, Number(favourite.star_rating) || 0),
+                      ),
+                  )}
+                </p>
+
+                <p>
+                  <strong>
+                    R{Number(favourite.price_per_night).toLocaleString("en-ZA")}
+                  </strong>{" "}
+                  per night
+                </p>
+
+                <div className={styles.favouriteActions}>
+                  <button
+                    type="button"
+                    className={styles.viewHotelButton}
+                    onClick={() =>
+                      window.location.assign(`/hotels/${favourite.hotel_id}`)
+                    }
+                  >
+                    View Hotel
+                  </button>
+
+                  <button
+                    type="button"
+                    className={styles.removeFavouriteButton}
+                    disabled={favouritesLoading}
+                    onClick={() =>
+                      handleRemoveFavourite(favourite.hotel_id)
+                    }
+                  >
+                    Remove Favourite
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
       </main>
 
