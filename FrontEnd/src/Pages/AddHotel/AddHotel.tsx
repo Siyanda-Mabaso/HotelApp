@@ -11,6 +11,7 @@ import {
   clearRoomSuccess,
   type RoomInput,
 } from "../../ReduxSlice/roomSlice";
+import { addHotelImage, clearImageErrors } from "../../ReduxSlice/imageSlice";
 
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
@@ -27,6 +28,7 @@ interface HotelFormData {
   country: string;
   star_rating: string;
   price_per_night: string;
+  facilities: string[];
 }
 
 interface RoomFormData {
@@ -45,6 +47,7 @@ const initialFormData: HotelFormData = {
   country: "",
   star_rating: "",
   price_per_night: "",
+  facilities: [],
 };
 
 const emptyRoom: RoomFormData = {
@@ -55,9 +58,26 @@ const emptyRoom: RoomFormData = {
   total_rooms: "1",
 };
 
+const availableFacilities = [
+  "Free Wi-Fi",
+  "Parking",
+  "Swimming Pool",
+  "Restaurant",
+  "Bar",
+  "Air Conditioning",
+  "Room Service",
+  "Gym",
+  "Spa",
+  "Airport Shuttle",
+  "Family Rooms",
+  "Pet Friendly",
+];
+
 const AddHotel = () => {
   const [formData, setFormData] = useState<HotelFormData>(initialFormData);
+
   const [roomTypes, setRoomTypes] = useState<RoomFormData[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([""]);
 
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
@@ -75,7 +95,11 @@ const AddHotel = () => {
     (state: RootState) => state.rooms,
   );
 
-  const isSaving = isSavingHotel || isSavingRoom;
+  const { isSaving: isSavingImage, mutationError: imageError } = useSelector(
+    (state: RootState) => state.images,
+  );
+
+  const isSaving = isSavingHotel || isSavingRoom || isSavingImage;
 
   const handleChange = (field: keyof HotelFormData, value: string) => {
     setFormData((previous) => ({
@@ -86,6 +110,39 @@ const AddHotel = () => {
     setFormError("");
     setSuccess("");
     dispatch(clearHotelError());
+  };
+
+  const handleFacilityChange = (facility: string) => {
+    setFormData((previous) => ({
+      ...previous,
+      facilities: previous.facilities.includes(facility)
+        ? previous.facilities.filter((item) => item !== facility)
+        : [...previous.facilities, facility],
+    }));
+
+    setFormError("");
+    setSuccess("");
+    dispatch(clearHotelError());
+  };
+
+  const handleImageUrlChange = (index: number, value: string) => {
+    setImageUrls((previous) =>
+      previous.map((url, urlIndex) => (urlIndex === index ? value : url)),
+    );
+
+    setFormError("");
+    setSuccess("");
+    dispatch(clearImageErrors());
+  };
+
+  const addImageField = () => {
+    setImageUrls((previous) => [...previous, ""]);
+  };
+
+  const removeImageField = (index: number) => {
+    setImageUrls((previous) =>
+      previous.filter((_, urlIndex) => urlIndex !== index),
+    );
   };
 
   const handleRoomChange = (
@@ -107,6 +164,7 @@ const AddHotel = () => {
 
   const addRoomType = () => {
     setRoomTypes((previous) => [...previous, { ...emptyRoom }]);
+
     setFormError("");
     setSuccess("");
   };
@@ -115,6 +173,7 @@ const AddHotel = () => {
     setRoomTypes((previous) =>
       previous.filter((_, roomIndex) => roomIndex !== index),
     );
+
     setFormError("");
     setSuccess("");
   };
@@ -124,9 +183,11 @@ const AddHotel = () => {
 
     setFormError("");
     setSuccess("");
+
     dispatch(clearHotelError());
     dispatch(clearRoomError());
     dispatch(clearRoomSuccess());
+    dispatch(clearImageErrors());
 
     if (!token || !user) {
       setFormError("Please log in before adding a hotel.");
@@ -168,6 +229,25 @@ const AddHotel = () => {
       return;
     }
 
+    // Validate image URLs before creating the hotel.
+    const validImageUrls = imageUrls
+      .map((url) => url.trim())
+      .filter((url) => url !== "");
+
+    for (const imageUrl of validImageUrls) {
+      try {
+        const parsedUrl = new URL(imageUrl);
+
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+          setFormError("Hotel image URLs must start with http:// or https://.");
+          return;
+        }
+      } catch {
+        setFormError(`Please enter a valid image URL: ${imageUrl}`);
+        return;
+      }
+    }
+
     // Validate all room types before creating the hotel.
     for (let index = 0; index < roomTypes.length; index += 1) {
       const room = roomTypes[index];
@@ -206,7 +286,6 @@ const AddHotel = () => {
         return;
       }
 
-      // Prevent duplicate room type names in this form.
       const duplicateRoomType = roomTypes.some(
         (otherRoom, otherIndex) =>
           otherIndex !== index &&
@@ -223,7 +302,7 @@ const AddHotel = () => {
     }
 
     try {
-      // 1. Create the hotel first.
+      // 1. Create the hotel.
       const createdHotel = await dispatch(
         createHotel({
           name: formData.name.trim(),
@@ -233,12 +312,23 @@ const AddHotel = () => {
           country: formData.country.trim(),
           star_rating: starRating,
           price_per_night: hotelPrice,
+          facilities: formData.facilities,
           token,
         }),
       ).unwrap();
 
-      // 2. Create the room types using the new hotel's ID.
-      // Each room request goes through the existing Redux thunk.
+      // 2. Save images against the newly created hotel.
+      for (const imageUrl of validImageUrls) {
+        await dispatch(
+          addHotelImage({
+            hotelId: createdHotel.id,
+            image_url: imageUrl,
+            token,
+          }),
+        ).unwrap();
+      }
+
+      // 3. Create room types against the new hotel.
       for (const room of roomTypes) {
         const roomData: RoomInput = {
           hotel_id: createdHotel.id,
@@ -252,18 +342,14 @@ const AddHotel = () => {
         await dispatch(createRoom(roomData)).unwrap();
       }
 
-      setSuccess(
-        roomTypes.length > 0
-          ? "Hotel and all room types added successfully!"
-          : "Hotel added successfully!",
-      );
+      setSuccess("Hotel, images and room types saved successfully!");
 
       setFormData({ ...initialFormData });
       setRoomTypes([]);
+      setImageUrls([""]);
     } catch {
-      // Redux stores request errors in hotelError or roomError.
-      // If a room request fails after the hotel is created,
-      // the hotel remains saved and may need its remaining rooms added later.
+      // The individual Redux slices display their request errors.
+      // The hotel may already exist if a later image or room request fails.
     }
   };
 
@@ -279,7 +365,7 @@ const AddHotel = () => {
 
           <h1>Add a Hotel</h1>
           <p>
-            Enter the accommodation details and add its room types in one form.
+            Enter the hotel details, facilities, images and optional room types.
           </p>
         </div>
 
@@ -300,7 +386,7 @@ const AddHotel = () => {
             <textarea
               id="description"
               name="description"
-              placeholder="Describe the hotel and its facilities"
+              placeholder="Describe the hotel"
               value={formData.description}
               onChange={(event) =>
                 handleChange("description", event.target.value)
@@ -371,14 +457,75 @@ const AddHotel = () => {
             />
           </div>
 
+          <div className={styles.facilitiesSection}>
+            <h2>Hotel Facilities</h2>
+            <p>Select all facilities available at this hotel.</p>
+
+            <div className={styles.facilitiesGrid}>
+              {availableFacilities.map((facility) => (
+                <label key={facility} className={styles.facilityOption}>
+                  <input
+                    type="checkbox"
+                    checked={formData.facilities.includes(facility)}
+                    onChange={() => handleFacilityChange(facility)}
+                    disabled={isSaving}
+                  />
+                  <span>{facility}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.imageSection}>
+            <h2>Hotel Images</h2>
+            <p>Add publicly accessible image URLs for the hotel gallery.</p>
+
+            {imageUrls.map((url, index) => (
+              <div className={styles.imageUrlRow} key={index}>
+                <div className={styles.inputGroup}>
+                  <label htmlFor={`hotel-image-${index}`}>
+                    Image URL {index + 1}
+                  </label>
+                  <input
+                    id={`hotel-image-${index}`}
+                    type="url"
+                    placeholder="https://example.com/hotel-image.jpg"
+                    value={url}
+                    onChange={(event) =>
+                      handleImageUrlChange(index, event.target.value)
+                    }
+                    disabled={isSaving}
+                  />
+                </div>
+
+                {imageUrls.length > 1 && (
+                  <button
+                    type="button"
+                    className={styles.removeRoomButton}
+                    onClick={() => removeImageField(index)}
+                    disabled={isSaving}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+
+            <button
+              type="button"
+              className={styles.addRoomButton}
+              onClick={addImageField}
+              disabled={isSaving}
+            >
+              + Add Another Image
+            </button>
+          </div>
+
           <div className={styles.roomSection}>
             <div className={styles.roomSectionHeading}>
               <div>
                 <h2>Room Types</h2>
-                <p>
-                  Optional: add the types of rooms guests can book at this
-                  hotel.
-                </p>
+                <p>Optional: add the types of rooms guests can book.</p>
               </div>
 
               <button
@@ -513,6 +660,12 @@ const AddHotel = () => {
             </p>
           )}
 
+          {imageError && (
+            <p className={styles.errorMessage} role="alert">
+              {imageError}
+            </p>
+          )}
+
           {roomError && (
             <p className={styles.errorMessage} role="alert">
               {roomError}
@@ -531,7 +684,7 @@ const AddHotel = () => {
                 isSaving
                   ? "Saving..."
                   : roomTypes.length > 0
-                    ? "Save Hotel and Rooms"
+                    ? "Save Hotel, Images and Rooms"
                     : "Add Hotel"
               }
               type="submit"

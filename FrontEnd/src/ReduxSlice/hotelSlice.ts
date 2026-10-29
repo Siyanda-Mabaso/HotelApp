@@ -10,6 +10,7 @@ export interface Hotel {
   country: string;
   star_rating: number;
   price_per_night: number;
+  facilities: string[];
 }
 
 export type HotelInput = Omit<Hotel, "id">;
