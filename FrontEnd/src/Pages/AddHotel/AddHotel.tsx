@@ -67,11 +67,13 @@ const AddHotel = () => {
 
   const { token, user } = useSelector((state: RootState) => state.login);
 
-  const { isSaving: isSavingHotel, mutationError: hotelError } =
-    useSelector((state: RootState) => state.hotels);
+  const { isSaving: isSavingHotel, mutationError: hotelError } = useSelector(
+    (state: RootState) => state.hotels,
+  );
 
-  const { isSaving: isSavingRoom, mutationError: roomError } =
-    useSelector((state: RootState) => state.rooms);
+  const { isSaving: isSavingRoom, mutationError: roomError } = useSelector(
+    (state: RootState) => state.rooms,
+  );
 
   const isSaving = isSavingHotel || isSavingRoom;
 
@@ -181,9 +183,7 @@ const AddHotel = () => {
         room.price_per_night.trim() === "" ||
         room.total_rooms.trim() === ""
       ) {
-        setFormError(
-          `Please complete all fields for Room Type ${roomNumber}.`,
-        );
+        setFormError(`Please complete all fields for Room Type ${roomNumber}.`);
         return;
       }
 
@@ -195,9 +195,7 @@ const AddHotel = () => {
       }
 
       if (!Number.isFinite(roomPrice) || roomPrice < 0) {
-        setFormError(
-          `Room Type ${roomNumber}: enter a valid price per night.`,
-        );
+        setFormError(`Room Type ${roomNumber}: enter a valid price per night.`);
         return;
       }
 
@@ -435,11 +433,7 @@ const AddHotel = () => {
                     id={`room-description-${index}`}
                     value={room.description}
                     onChange={(event) =>
-                      handleRoomChange(
-                        index,
-                        "description",
-                        event.target.value,
-                      )
+                      handleRoomChange(index, "description", event.target.value)
                     }
                     placeholder="Describe the room"
                     rows={3}
@@ -498,11 +492,7 @@ const AddHotel = () => {
                     step="1"
                     value={room.total_rooms}
                     onChange={(event) =>
-                      handleRoomChange(
-                        index,
-                        "total_rooms",
-                        event.target.value,
-                      )
+                      handleRoomChange(index, "total_rooms", event.target.value)
                     }
                     required
                   />

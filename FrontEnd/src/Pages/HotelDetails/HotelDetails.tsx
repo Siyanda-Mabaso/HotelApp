@@ -6,6 +6,8 @@ import type { RootState, AppDispatch } from "../../Store/store";
 
 import { fetchHotelById, clearHotelError } from "../../ReduxSlice/hotelSlice";
 
+import { fetchHotelImages, type HotelImage } from "../../ReduxSlice/imageSlice";
+
 import {
   fetchFavourites,
   addFavourite,
@@ -33,21 +35,59 @@ const HotelDetails = () => {
   const [favouriteMessage, setFavouriteMessage] = useState("");
   const [isSavingFavourite, setIsSavingFavourite] = useState(false);
 
+  const [hotelImages, setHotelImages] = useState<HotelImage[]>([]);
+  const [isImagesLoading, setIsImagesLoading] = useState(false);
+
   const validHotelId = Boolean(id && /^\d+$/.test(id) && Number(id) > 0);
 
-  // Only display a hotel that matches the current URL.
   const hotel =
     selectedHotel?.id === Number(id)
       ? selectedHotel
       : (hotels.find((item) => item.id === Number(id)) ?? null);
 
-  // Fetch details whenever the page opens or the URL ID changes.
+  // Load hotel details.
+  useEffect(() => {
+    if (!validHotelId || !id) return;
+
+    void dispatch(fetchHotelById(id));
+  }, [dispatch, id, validHotelId]);
+
+  // Load the gallery for the current hotel.
   useEffect(() => {
     if (!validHotelId || !id) {
+      setHotelImages([]);
+      setIsImagesLoading(false);
       return;
     }
 
-    void dispatch(fetchHotelById(id));
+    let cancelled = false;
+
+    const loadHotelImages = async () => {
+      setIsImagesLoading(true);
+      setHotelImages([]);
+
+      try {
+        const images = await dispatch(fetchHotelImages(Number(id))).unwrap();
+
+        if (!cancelled) {
+          setHotelImages(images);
+        }
+      } catch {
+        if (!cancelled) {
+          setHotelImages([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsImagesLoading(false);
+        }
+      }
+    };
+
+    void loadHotelImages();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch, id, validHotelId]);
 
   // Load favourites for the logged-in user.
@@ -67,9 +107,7 @@ const HotelDetails = () => {
       return;
     }
 
-    if (!hotel || isSavingFavourite) {
-      return;
-    }
+    if (!hotel || isSavingFavourite) return;
 
     setIsSavingFavourite(true);
     setFavouriteMessage("");
@@ -188,12 +226,55 @@ const HotelDetails = () => {
 
         {hotel && !hotelError && (
           <>
-            <section className={styles.heroImage}>
-              <span className={styles.heroIcon} aria-hidden="true">
-                ⌂
-              </span>
+            {/* HOTEL PHOTO GALLERY */}
+            <section
+              className={styles.heroImage}
+              aria-label={`${hotel.name} photo gallery`}
+            >
+              {isImagesLoading ? (
+                <p className={styles.statusMessage} role="status">
+                  Loading hotel photos...
+                </p>
+              ) : hotelImages.length > 0 ? (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      hotelImages.length === 1
+                        ? "1fr"
+                        : "repeat(auto-fit, minmax(180px, 1fr))",
+                    gap: "10px",
+                    width: "100%",
+                    height: "100%",
+                    padding: "10px",
+                    boxSizing: "border-box",
+                    overflowY: "auto",
+                  }}
+                >
+                  {hotelImages.map((image) => (
+                    <img
+                      key={image.id}
+                      src={image.image_url}
+                      alt={`${hotel.name} accommodation`}
+                      loading="lazy"
+                      style={{
+                        width: "100%",
+                        height: "220px",
+                        objectFit: "cover",
+                        borderRadius: "10px",
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <span className={styles.heroIcon} aria-hidden="true">
+                    ⌂
+                  </span>
 
-              <span className={styles.imageLabel}>PARADISE STAYS</span>
+                  <span className={styles.imageLabel}>PARADISE STAYS</span>
+                </>
+              )}
             </section>
 
             <section className={styles.detailsCard}>
