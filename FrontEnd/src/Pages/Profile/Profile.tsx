@@ -1,176 +1,194 @@
-import { useEffect } from "react";
-import { Link } from "react-router-dom";
+
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState, AppDispatch } from "../../Store/store";
+import type { AppDispatch, RootState } from "../../Store/store";
 import {
-  fetchFavourites,
-  removeFavourite,
-} from "../../ReduxSlice/favouriteSlice";
+    fetchMyProfile,
+    updateMyProfile,
+    clearProfileMessages,
+} from "../../ReduxSlice/profileSlice";
+import Navbar from "../../Components/Navbar/Navbar";
+import Footer from "../../Components/Footer/Footer";
+import Button from "../../Components/Button/Button";
 import styles from "./Profile.module.css";
 
-function Profile() {
-  const dispatch = useDispatch<AppDispatch>();
+const Profile = () => {
+    const dispatch = useDispatch<AppDispatch>();
 
-  const { token, user } = useSelector((state: RootState) => state.login);
+    const { profile, isLoading, isUpdating, error, success } =
+        useSelector((state: RootState) => state.profile);
 
-  const { favourites, isLoading, error } = useSelector(
-    (state: RootState) => state.favourites,
-  );
+    const [isEditing, setIsEditing] = useState(false);
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
 
-  useEffect(() => {
-    if (token) {
-      dispatch(fetchFavourites(token));
-    }
-  }, [dispatch, token]);
+    useEffect(() => {
+        dispatch(fetchMyProfile());
+    }, [dispatch]);
 
-  const handleRemoveFavourite = (hotelId: number) => {
-    if (token) {
-      dispatch(removeFavourite({ hotelId, token }));
-    }
-  };
+    useEffect(() => {
+        if (profile) {
+            setName(profile.name);
+            setEmail(profile.email);
+        }
+    }, [profile]);
 
-  if (!user || !token) {
+    const handleEdit = () => {
+        dispatch(clearProfileMessages());
+        setIsEditing(true);
+    };
+
+    const handleCancel = () => {
+        setName(profile?.name ?? "");
+        setEmail(profile?.email ?? "");
+        setIsEditing(false);
+        dispatch(clearProfileMessages());
+    };
+
+    const handleSubmit = async (
+        event: React.FormEvent<HTMLFormElement>
+    ) => {
+        event.preventDefault();
+
+        const result = await dispatch(
+            updateMyProfile({ name: name.trim(), email: email.trim() })
+        );
+
+        if (updateMyProfile.fulfilled.match(result)) {
+            setIsEditing(false);
+        }
+    };
+
     return (
-      <main className={styles.page}>
-        <div className={styles.heading}>
-          <span className={styles.eyebrow}>PARADISE</span>
-          <h1>My Profile</h1>
-          <p>Manage your account and favourite hotels.</p>
-        </div>
+        <div className={styles.page}>
+            <Navbar />
 
-        <section className={styles.section}>
-          <div className={styles.empty}>
-            <h3>Please log in</h3>
-            <p>Log in to view your profile and saved hotels.</p>
-            <Link to="/login" className={styles.button}>
-              Go to Login
-            </Link>
-          </div>
-        </section>
-      </main>
+            <main className={styles.main}>
+                <section className={styles.profileCard}>
+                    <div className={styles.heading}>
+                        <div className={styles.avatar}>
+                            {profile?.name?.charAt(0).toUpperCase() || "U"}
+                        </div>
+
+                        <h1>My Profile</h1>
+                        <p>Manage your Paradise account information.</p>
+                    </div>
+
+                    {isLoading && (
+                        <p className={styles.info}>Loading your profile...</p>
+                    )}
+
+                    {error && (
+                        <p className={styles.error} role="alert">
+                            {error}
+                        </p>
+                    )}
+
+                    {success && (
+                        <p className={styles.success} role="status">
+                            {success}
+                        </p>
+                    )}
+
+                    {!isLoading && profile && (
+                        <>
+                            {!isEditing ? (
+                                <div className={styles.details}>
+                                    <div className={styles.detail}>
+                                        <span>Full name</span>
+                                        <strong>{profile.name}</strong>
+                                    </div>
+
+                                    <div className={styles.detail}>
+                                        <span>Email address</span>
+                                        <strong>{profile.email}</strong>
+                                    </div>
+
+                                    <div className={styles.detail}>
+                                        <span>Account type</span>
+                                        <strong className={styles.role}>
+                                            {profile.role}
+                                        </strong>
+                                    </div>
+
+                                    <div className={styles.detail}>
+                                        <span>Member since</span>
+                                        <strong>
+                                            {new Date(
+                                                profile.created_at
+                                            ).toLocaleDateString("en-ZA", {
+                                                day: "numeric",
+                                                month: "long",
+                                                year: "numeric",
+                                            })}
+                                        </strong>
+                                    </div>
+
+                                    <div className={styles.actions}>
+                                        <Button
+                                            text="Edit Profile"
+                                            onClick={handleEdit}
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <form
+                                    className={styles.form}
+                                    onSubmit={handleSubmit}
+                                >
+                                    <label htmlFor="name">Full name</label>
+                                    <input
+                                        id="name"
+                                        type="text"
+                                        value={name}
+                                        onChange={(event) =>
+                                            setName(event.target.value)
+                                        }
+                                        required
+                                        maxLength={255}
+                                    />
+
+                                    <label htmlFor="email">Email address</label>
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        value={email}
+                                        onChange={(event) =>
+                                            setEmail(event.target.value)
+                                        }
+                                        required
+                                        maxLength={255}
+                                    />
+
+                                    <div className={styles.actions}>
+                                        <Button
+                                            text={
+                                                isUpdating
+                                                    ? "Saving..."
+                                                    : "Save Changes"
+                                            }
+                                            onClick={() => {}}
+                                        />
+
+                                        <button
+                                            type="button"
+                                            className={styles.cancelButton}
+                                            onClick={handleCancel}
+                                            disabled={isUpdating}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </>
+                    )}
+                </section>
+            </main>
+
+            <Footer />
+        </div>
     );
-  }
-
-  const initials = user.name
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  return (
-    <main className={styles.page}>
-      <div className={styles.heading}>
-        <span className={styles.eyebrow}>PARADISE ACCOUNT</span>
-        <h1>My Profile</h1>
-        <p>Manage your account, bookings, and favourite hotels.</p>
-      </div>
-
-      {/* User profile */}
-      <section className={styles.profileCard}>
-        <div className={styles.avatar}>{initials || "U"}</div>
-
-        <div className={styles.userInfo}>
-          <h2>{user.name}</h2>
-          <p>{user.email}</p>
-          <span className={styles.role}>{user.role}</span>
-        </div>
-      </section>
-
-      {/* Booking link */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeading}>
-          <div>
-            <h2>My Bookings</h2>
-            <p>View and manage your hotel reservations.</p>
-          </div>
-        </div>
-
-        <Link to="/my-bookings" className={styles.button}>
-          View My Bookings
-        </Link>
-      </section>
-
-      {/* Favourite hotels */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeading}>
-          <div>
-            <h2>My Favourite Hotels</h2>
-            <p>Your saved hotels, all in one place.</p>
-          </div>
-
-          <span className={styles.heart} aria-label="Favourites">
-            ♥
-          </span>
-        </div>
-
-        {isLoading && (
-          <p className={styles.loading}>Loading your favourite hotels...</p>
-        )}
-
-        {error && (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
-        )}
-
-        {!isLoading && !error && favourites.length === 0 && (
-          <div className={styles.empty}>
-            <div className={styles.emptyHeart}>♡</div>
-            <h3>No favourite hotels yet</h3>
-            <p>Save hotels you love and they will appear here.</p>
-            <Link to="/home" className={styles.button}>
-              Explore Hotels
-            </Link>
-          </div>
-        )}
-
-        {!isLoading && favourites.length > 0 && (
-          <div className={styles.favouritesGrid}>
-            {favourites.map((favourite) => (
-              <article key={favourite.id} className={styles.favouriteCard}>
-                <div className={styles.hotelInfo}>
-                  <h3>{favourite.hotel_name}</h3>
-
-                  <p>
-                    {favourite.city}, {favourite.country}
-                  </p>
-
-                  <p>{favourite.address}</p>
-
-                  <p>⭐ {favourite.star_rating} stars</p>
-
-                  <p className={styles.hotelPrice}>
-                    R{Number(favourite.price_per_night).toFixed(2)}
-                    <span> / night</span>
-                  </p>
-                </div>
-
-                <div className={styles.cardActions}>
-                  <Link
-                    to={`/hotels/${favourite.hotel_id}`}
-                    className={styles.viewHotelLink}
-                  >
-                    View Hotel
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFavourite(favourite.hotel_id)}
-                    className={styles.removeButton}
-                    disabled={isLoading}
-                  >
-                    Remove Favourite
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
-  );
-}
+};
 
 export default Profile;
