@@ -1,3 +1,4 @@
+
 import { Response } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
 
@@ -8,10 +9,11 @@ import {
   findBookingById,
   cancelBooking,
   countBookedRooms,
+  deleteBookingById,
 } from "../services/bookingServices";
 
 import { findHotelById } from "../services/hotelServices";
-import { findRoomById, findRoomsByHotelId } from "../services/roomServices";
+import { findRoomById } from "../services/roomServices";
 
 // Create a booking
 export const addBooking = async (
@@ -21,16 +23,14 @@ export const addBooking = async (
   try {
     const userId = req.user?.userId;
 
-    const { hotel_id, room_id, check_in, check_out, rooms, guests } = req.body;
+    const { hotel_id, room_id, check_in, check_out, rooms, guests } =
+      req.body;
 
     if (!userId) {
-      res.status(401).json({
-        message: "Please log in first.",
-      });
+      res.status(401).json({ message: "Please log in first." });
       return;
     }
 
-    // Validate required fields
     if (
       hotel_id === undefined ||
       room_id === undefined ||
@@ -75,7 +75,7 @@ export const addBooking = async (
       return;
     }
 
-    // Validate date format (YYYY-MM-DD)
+    // Validate date format
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
     const isValidDate = (value: unknown): boolean => {
@@ -105,27 +105,20 @@ export const addBooking = async (
       return;
     }
 
-    // Check that the hotel exists
     const hotel = await findHotelById(hotelId);
 
     if (!hotel) {
-      res.status(404).json({
-        message: "Hotel not found.",
-      });
+      res.status(404).json({ message: "Hotel not found." });
       return;
     }
 
-    // Check that the selected room exists
     const room = await findRoomById(roomId);
 
     if (!room) {
-      res.status(404).json({
-        message: "Room type not found.",
-      });
+      res.status(404).json({ message: "Room type not found." });
       return;
     }
 
-    // Ensure the selected room belongs to this hotel
     if (room.hotel_id !== hotelId) {
       res.status(400).json({
         message: "The selected room does not belong to this hotel.",
@@ -133,7 +126,6 @@ export const addBooking = async (
       return;
     }
 
-    // Check guest capacity across the requested rooms
     if (guestQuantity > room.capacity * roomQuantity) {
       res.status(400).json({
         message:
@@ -146,11 +138,11 @@ export const addBooking = async (
     // Calculate the number of nights using UTC dates
     const checkInDate = new Date(`${check_in}T00:00:00.000Z`);
     const checkOutDate = new Date(`${check_out}T00:00:00.000Z`);
-
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
     const nights =
-      (checkOutDate.getTime() - checkInDate.getTime()) / millisecondsPerDay;
+      (checkOutDate.getTime() - checkInDate.getTime()) /
+      millisecondsPerDay;
 
     if (!Number.isInteger(nights) || nights <= 0) {
       res.status(400).json({
@@ -159,8 +151,11 @@ export const addBooking = async (
       return;
     }
 
-    // Count rooms reserved during overlapping dates
-    const bookedRooms = await countBookedRooms(roomId, check_in, check_out);
+    const bookedRooms = await countBookedRooms(
+      roomId,
+      check_in,
+      check_out,
+    );
 
     const availableRooms = room.total_rooms - bookedRooms;
 
@@ -172,7 +167,6 @@ export const addBooking = async (
       return;
     }
 
-    // Calculate the price using the selected room's nightly rate
     const nightlyPrice = Number(room.price_per_night);
     const totalPrice = nightlyPrice * nights * roomQuantity;
 
@@ -183,7 +177,6 @@ export const addBooking = async (
       return;
     }
 
-    // Create the booking
     const booking = await createBooking(
       userId,
       hotelId,
@@ -208,27 +201,21 @@ export const addBooking = async (
     });
   } catch (error) {
     console.error("Error creating booking:", error);
-
-    res.status(500).json({
-      message: "Failed to create booking.",
-    });
+    res.status(500).json({ message: "Failed to create booking." });
   }
 };
 
-// Get bookings
+// Get bookings: admins see all; customers see their own
 export const getBookings = async (
   req: AuthRequest,
   res: Response,
 ): Promise<void> => {
   try {
     if (!req.user) {
-      res.status(401).json({
-        message: "Please log in first.",
-      });
+      res.status(401).json({ message: "Please log in first." });
       return;
     }
 
-    // Admins can see all bookings; customers see only their own
     const bookings =
       req.user.role === "admin"
         ? await findAllBookings()
@@ -237,10 +224,29 @@ export const getBookings = async (
     res.status(200).json({ bookings });
   } catch (error) {
     console.error("Error retrieving bookings:", error);
+    res.status(500).json({ message: "Failed to retrieve bookings." });
+  }
+};
 
-    res.status(500).json({
-      message: "Failed to retrieve bookings.",
-    });
+// Admin-only: get all bookings with customer and hotel details
+export const getAdminBookings = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    if (req.user?.role !== "admin") {
+      res.status(403).json({
+        message: "Admin privileges are required.",
+      });
+      return;
+    }
+
+    const bookings = await findAllBookings();
+
+    res.status(200).json({ bookings });
+  } catch (error) {
+    console.error("Error retrieving admin bookings:", error);
+    res.status(500).json({ message: "Failed to retrieve bookings." });
   }
 };
 
@@ -254,25 +260,19 @@ export const getBookingById = async (
     const bookingId = Number(req.params.id);
 
     if (!user) {
-      res.status(401).json({
-        message: "Please log in first.",
-      });
+      res.status(401).json({ message: "Please log in first." });
       return;
     }
 
     if (!Number.isInteger(bookingId) || bookingId <= 0) {
-      res.status(400).json({
-        message: "Invalid booking ID.",
-      });
+      res.status(400).json({ message: "Invalid booking ID." });
       return;
     }
 
     const booking = await findBookingById(bookingId);
 
     if (!booking) {
-      res.status(404).json({
-        message: "Booking not found.",
-      });
+      res.status(404).json({ message: "Booking not found." });
       return;
     }
 
@@ -286,10 +286,7 @@ export const getBookingById = async (
     res.status(200).json({ booking });
   } catch (error) {
     console.error("Error retrieving booking:", error);
-
-    res.status(500).json({
-      message: "Failed to retrieve booking.",
-    });
+    res.status(500).json({ message: "Failed to retrieve booking." });
   }
 };
 
@@ -303,36 +300,36 @@ export const removeBooking = async (
     const bookingId = Number(req.params.id);
 
     if (!user) {
-      res.status(401).json({
-        message: "Please log in first.",
-      });
+      res.status(401).json({ message: "Please log in first." });
       return;
     }
 
     if (!Number.isInteger(bookingId) || bookingId <= 0) {
-      res.status(400).json({
-        message: "Invalid booking ID.",
-      });
+      res.status(400).json({ message: "Invalid booking ID." });
       return;
     }
 
     const existingBooking = await findBookingById(bookingId);
 
     if (!existingBooking) {
-      res.status(404).json({
-        message: "Booking not found.",
-      });
+      res.status(404).json({ message: "Booking not found." });
       return;
     }
 
-    if (user.role !== "admin" && existingBooking.user_id !== user.userId) {
+    if (
+      user.role !== "admin" &&
+      existingBooking.user_id !== user.userId
+    ) {
       res.status(403).json({
         message: "You can only cancel your own bookings.",
       });
       return;
     }
 
-    const booking = await cancelBooking(bookingId, existingBooking.user_id);
+    const booking = await cancelBooking(
+      bookingId,
+      existingBooking.user_id,
+    );
 
     if (!booking) {
       res.status(400).json({
@@ -347,9 +344,43 @@ export const removeBooking = async (
     });
   } catch (error) {
     console.error("Error cancelling booking:", error);
+    res.status(500).json({ message: "Failed to cancel booking." });
+  }
+};
 
-    res.status(500).json({
-      message: "Failed to cancel booking.",
+// Admin-only: permanently delete one booking
+export const deleteBooking = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    if (req.user?.role !== "admin") {
+      res.status(403).json({
+        message: "Admin privileges are required.",
+      });
+      return;
+    }
+
+    const bookingId = Number(req.params.id);
+
+    if (!Number.isInteger(bookingId) || bookingId <= 0) {
+      res.status(400).json({ message: "Invalid booking ID." });
+      return;
+    }
+
+    const deletedBooking = await deleteBookingById(bookingId);
+
+    if (!deletedBooking) {
+      res.status(404).json({ message: "Booking not found." });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Booking deleted successfully.",
+      booking: deletedBooking,
     });
+  } catch (error) {
+    console.error("Error deleting booking:", error);
+    res.status(500).json({ message: "Failed to delete booking." });
   }
 };
