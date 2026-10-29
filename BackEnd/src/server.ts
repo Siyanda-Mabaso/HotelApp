@@ -8,6 +8,7 @@ import bookingRoutes from "./routes/bookingRoutes";
 import reviewRoutes from "./routes/reviewRoutes";
 import favouriteRoutes from "./routes/favouriteRoutes";
 import roomRoutes from "./routes/roomRoutes";
+import imageRoutes from "./routes/imageRoutes";
 import cors from "cors";
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use("/api", bookingRoutes);
 app.use("/api", reviewRoutes);
 app.use("/api", favouriteRoutes);
 app.use("/api", roomRoutes);
+app.use("/api", imageRoutes);
 const startServer = async () => {
     try {
         await dbCheckTables();

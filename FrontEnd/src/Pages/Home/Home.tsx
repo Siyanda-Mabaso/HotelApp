@@ -1,60 +1,72 @@
-
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+
+import type { RootState, AppDispatch } from "../../Store/store";
+import { fetchHotels } from "../../ReduxSlice/hotelSlice";
+import { fetchHotelImages, type HotelImage } from "../../ReduxSlice/imageSlice";
 
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
 
 import styles from "./Home.module.css";
 
-interface Hotel {
-  id: number;
-  name: string;
-  description: string;
-  address: string;
-  city: string;
-  country: string;
-  star_rating: number;
-  price_per_night: number;
-}
-
 const Home = () => {
-  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { hotels, isLoading, error } = useSelector(
+    (state: RootState) => state.hotels,
+  );
+
   const [search, setSearch] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [hotelImages, setHotelImages] = useState<Record<number, HotelImage[]>>(
+    {},
+  );
 
+  // Fetch hotels.
   useEffect(() => {
-    const fetchHotels = async () => {
-      try {
-        const response = await axios.get("/api/hotels");
+    void dispatch(fetchHotels());
+  }, [dispatch]);
 
-        const data = Array.isArray(response.data)
-          ? response.data
-          : response.data.hotels;
+  // Fetch images belonging to each hotel.
+  useEffect(() => {
+    if (hotels.length === 0) {
+      setHotelImages({});
+      return;
+    }
 
-        if (Array.isArray(data)) {
-          setHotels(data);
-        } else {
-          setError("Unable to read the hotel listings.");
-        }
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          setError(
-            error.response?.data?.message ||
-              "Unable to load hotels. Please try again.",
-          );
-        } else {
-          setError("Something went wrong while loading hotels.");
-        }
-      } finally {
-        setIsLoading(false);
+    let cancelled = false;
+
+    const loadImages = async () => {
+      const results = await Promise.all(
+        hotels.map(async (hotel) => {
+          try {
+            const images = await dispatch(fetchHotelImages(hotel.id)).unwrap();
+
+            return [hotel.id, images] as const;
+          } catch {
+            return [hotel.id, [] as HotelImage[]] as const;
+          }
+        }),
+      );
+
+      if (!cancelled) {
+        const imageMap: Record<number, HotelImage[]> = {};
+
+        results.forEach(([hotelId, images]) => {
+          imageMap[hotelId] = images;
+        });
+
+        setHotelImages(imageMap);
       }
     };
 
-    void fetchHotels();
-  }, []);
+    void loadImages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, hotels]);
 
   const filteredHotels = useMemo(() => {
     const searchText = search.trim().toLowerCase();
@@ -80,8 +92,8 @@ const Home = () => {
             <h1>Find your perfect place to stay.</h1>
 
             <p className={styles.heroText}>
-              Discover comfortable stays, explore new destinations, and
-              find the right accommodation for your next trip.
+              Discover comfortable stays, explore new destinations, and find the
+              right accommodation for your next trip.
             </p>
 
             <a href="#hotel-listings" className={styles.heroButton}>
@@ -127,9 +139,10 @@ const Home = () => {
           {!isLoading && error && (
             <div className={styles.errorState}>
               <p>{error}</p>
+
               <button
                 type="button"
-                onClick={() => window.location.reload()}
+                onClick={() => void dispatch(fetchHotels())}
               >
                 Try Again
               </button>
@@ -168,57 +181,91 @@ const Home = () => {
 
           {!isLoading && !error && filteredHotels.length > 0 && (
             <div className={styles.hotelGrid}>
-              {filteredHotels.map((hotel) => (
-                <article className={styles.hotelCard} key={hotel.id}>
-                  <div className={styles.hotelImage}>
-                    <span className={styles.imageIcon} aria-hidden="true">
-                      ⌂
-                    </span>
-                    <span className={styles.imageLabel}>
-                      PARADISE STAYS
-                    </span>
-                  </div>
+              {filteredHotels.map((hotel) => {
+                const firstImage = hotelImages[hotel.id]?.[0];
 
-                  <div className={styles.hotelInfo}>
-                    <div className={styles.hotelTitleRow}>
-                      <h3>{hotel.name}</h3>
+                return (
+                  <article className={styles.hotelCard} key={hotel.id}>
+                    <div
+                      className={styles.hotelImage}
+                      style={{
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {firstImage ? (
+                        <img
+                          src={firstImage.image_url}
+                          alt={hotel.name}
+                          loading="lazy"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                          onError={(event) => {
+                            event.currentTarget.style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <span className={styles.imageIcon} aria-hidden="true">
+                          ⌂
+                        </span>
+                      )}
 
-                      <span className={styles.rating}>
-                        ★ {hotel.star_rating}
+                      <span
+                        className={styles.imageLabel}
+                        style={{
+                          position: "absolute",
+                          bottom: "12px",
+                          left: "12px",
+                        }}
+                      >
+                        PARADISE STAYS
                       </span>
                     </div>
 
-                    <p className={styles.location}>
-                      <span aria-hidden="true">⌖</span>{" "}
-                      {hotel.city}, {hotel.country}
-                    </p>
+                    <div className={styles.hotelInfo}>
+                      <div className={styles.hotelTitleRow}>
+                        <h3>{hotel.name}</h3>
 
-                    <p className={styles.description}>
-                      {hotel.description}
-                    </p>
-
-                    <div className={styles.cardFooter}>
-                      <div className={styles.price}>
-                        <strong>
-                          R
-                          {Number(hotel.price_per_night).toLocaleString(
-                            "en-ZA",
-                          )}
-                        </strong>
-                        <span> / night</span>
+                        <span className={styles.rating}>
+                          ★ {hotel.star_rating}
+                        </span>
                       </div>
 
-                      <Link
-                        to={`/hotels/${hotel.id}`}
-                        className={styles.detailsButton}
-                        state={{ hotel }}
-                      >
-                        View Details
-                      </Link>
+                      <p className={styles.location}>
+                        <span aria-hidden="true">⌖</span> {hotel.city},{" "}
+                        {hotel.country}
+                      </p>
+
+                      <p className={styles.description}>{hotel.description}</p>
+
+                      <div className={styles.cardFooter}>
+                        <div className={styles.price}>
+                          <strong>
+                            R
+                            {Number(hotel.price_per_night).toLocaleString(
+                              "en-ZA",
+                            )}
+                          </strong>
+
+                          <span> / night</span>
+                        </div>
+
+                        <Link
+                          to={`/hotels/${hotel.id}`}
+                          className={styles.detailsButton}
+                          state={{ hotel }}
+                        >
+                          View Details
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>

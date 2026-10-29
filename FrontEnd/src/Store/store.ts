@@ -1,13 +1,35 @@
-import { configureStore } from "@reduxjs/toolkit";
+
+import { configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
+
 import signUpReducer from "../ReduxSlice/SignUpSlice";
-import loginReducer from "../ReduxSlice/LoginSlice";
+import loginReducer, { logout } from "../ReduxSlice/LoginSlice";
 import favouriteReducer from "../ReduxSlice/favouriteSlice";
+import hotelReducer from "../ReduxSlice/hotelSlice";
+import roomReducer from "../ReduxSlice/roomSlice";
+import bookingReducer from "../ReduxSlice/bookingSlice";
+import imageReducer from "../ReduxSlice/imageSlice";
+
+const authListener = createListenerMiddleware();
+
+authListener.startListening({
+  actionCreator: logout,
+  effect: () => {
+    localStorage.removeItem("paradiseAuth");
+  },
+});
+
 const store = configureStore({
   reducer: {
     signUp: signUpReducer,
     login: loginReducer,
     favourites: favouriteReducer,
+    hotels: hotelReducer,
+    rooms: roomReducer,
+    bookings: bookingReducer,
+    images: imageReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().prepend(authListener.middleware),
 });
 
 export default store;

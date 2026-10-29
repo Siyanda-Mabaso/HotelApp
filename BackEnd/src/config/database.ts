@@ -6,6 +6,7 @@ import { createBookingTable } from "../services/bookingServices";
 import { createReviewTable } from "../services/reviewServices";
 import { createFavouriteTable } from "../services/favouriteServices";
 import { createRoomTable } from "../services/roomServices";
+import { createImageTable } from "../services/imageServices";
 
 dotenv.config();
 
@@ -44,10 +45,11 @@ export const dbCheckTables = async (): Promise<void> => {
 
     await createUserTable();
     await createHotelTable();
+      await createImageTable();
     await createRoomTable();
     await createBookingTable();
     await createReviewTable();
     await createFavouriteTable();
-
+  
     console.log("Database tables checked successfully");
 };

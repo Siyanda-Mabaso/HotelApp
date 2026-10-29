@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { RootState, AppDispatch } from "../../Store/store";
+
+import { fetchHotelById, clearHotelError } from "../../ReduxSlice/hotelSlice";
+
+import { fetchHotelImages, type HotelImage } from "../../ReduxSlice/imageSlice";
+
 import {
   fetchFavourites,
   addFavourite,
@@ -15,17 +19,6 @@ import Footer from "../../Components/Footer/Footer";
 
 import styles from "./HotelDetails.module.css";
 
-interface Hotel {
-  id: number;
-  name: string;
-  description: string;
-  address: string;
-  city: string;
-  country: string;
-  star_rating: number;
-  price_per_night: number;
-}
-
 const HotelDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -35,75 +28,86 @@ const HotelDetails = () => {
 
   const { favourites } = useSelector((state: RootState) => state.favourites);
 
-  const [hotel, setHotel] = useState<Hotel | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { hotels, selectedHotel, isHotelLoading, hotelError } = useSelector(
+    (state: RootState) => state.hotels,
+  );
+
   const [favouriteMessage, setFavouriteMessage] = useState("");
   const [isSavingFavourite, setIsSavingFavourite] = useState(false);
 
-  // Fetch hotel details
+  const [hotelImages, setHotelImages] = useState<HotelImage[]>([]);
+  const [isImagesLoading, setIsImagesLoading] = useState(false);
+
+  const validHotelId = Boolean(id && /^\d+$/.test(id) && Number(id) > 0);
+
+  const hotel =
+    selectedHotel?.id === Number(id)
+      ? selectedHotel
+      : (hotels.find((item) => item.id === Number(id)) ?? null);
+
+  // Load hotel details.
   useEffect(() => {
-    const fetchHotel = async () => {
-      if (!id || !/^\d+$/.test(id)) {
-        setError("Invalid hotel ID.");
-        setIsLoading(false);
-        return;
-      }
+    if (!validHotelId || !id) return;
+
+    void dispatch(fetchHotelById(id));
+  }, [dispatch, id, validHotelId]);
+
+  // Load the gallery for the current hotel.
+  useEffect(() => {
+    if (!validHotelId || !id) {
+      setHotelImages([]);
+      setIsImagesLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadHotelImages = async () => {
+      setIsImagesLoading(true);
+      setHotelImages([]);
 
       try {
-        setIsLoading(true);
-        setError("");
+        const images = await dispatch(fetchHotelImages(Number(id))).unwrap();
 
-        const response = await axios.get(`/api/hotels/${id}`);
-        const data = response.data?.hotel ?? response.data;
-
-        if (!data || typeof data !== "object" || data.id == null) {
-          setError("Hotel information could not be found.");
-          return;
+        if (!cancelled) {
+          setHotelImages(images);
         }
-
-        setHotel(data as Hotel);
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          setError(
-            error.response?.status === 404
-              ? "Sorry, this hotel could not be found."
-              : error.response?.data?.message ||
-                  "Unable to load hotel details. Please try again.",
-          );
-        } else {
-          setError("Something went wrong while loading hotel details.");
+      } catch {
+        if (!cancelled) {
+          setHotelImages([]);
         }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsImagesLoading(false);
+        }
       }
     };
 
-    void fetchHotel();
-  }, [id]);
+    void loadHotelImages();
 
-  // Load the logged-in user's favourites
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, id, validHotelId]);
+
+  // Load favourites for the logged-in user.
   useEffect(() => {
     if (token) {
-      dispatch(fetchFavourites(token));
+      void dispatch(fetchFavourites(token));
     }
   }, [dispatch, token]);
 
-  // Check whether this hotel is already a favourite
   const isFavourite = hotel
     ? favourites.some((favourite) => favourite.hotel_id === hotel.id)
     : false;
 
-  // Add or remove a favourite when the heart is clicked
   const handleFavouriteClick = async () => {
     if (!token) {
       navigate("/login");
       return;
     }
 
-    if (!hotel || isSavingFavourite) {
-      return;
-    }
+    if (!hotel || isSavingFavourite) return;
 
     setIsSavingFavourite(true);
     setFavouriteMessage("");
@@ -139,6 +143,34 @@ const HotelDetails = () => {
     }
   };
 
+  const handleRetry = () => {
+    if (id && validHotelId) {
+      dispatch(clearHotelError());
+      void dispatch(fetchHotelById(id));
+    }
+  };
+
+  if (!validHotelId) {
+    return (
+      <div className={styles.page}>
+        <Navbar />
+
+        <main className={styles.main}>
+          <section className={styles.messageCard}>
+            <h1>Hotel unavailable</h1>
+            <p>Invalid hotel ID.</p>
+
+            <Link to="/home" className={styles.primaryButton}>
+              Browse Hotels
+            </Link>
+          </section>
+        </main>
+
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <Navbar />
@@ -148,28 +180,101 @@ const HotelDetails = () => {
           ← Back to Hotels
         </Link>
 
-        {isLoading && (
-          <p className={styles.statusMessage}>Loading hotel details...</p>
+        {isHotelLoading && !hotel && (
+          <p className={styles.statusMessage} role="status">
+            Loading hotel details...
+          </p>
         )}
 
-        {!isLoading && error && (
+        {!isHotelLoading && hotelError && (
           <section className={styles.messageCard}>
             <h1>Hotel unavailable</h1>
-            <p>{error}</p>
+            <p role="alert">{hotelError}</p>
+
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={handleRetry}
+            >
+              Try Again
+            </button>
+
             <Link to="/home" className={styles.primaryButton}>
               Browse Hotels
             </Link>
           </section>
         )}
 
-        {!isLoading && !error && hotel && (
-          <>
-            <section className={styles.heroImage}>
-              <span className={styles.heroIcon} aria-hidden="true">
-                ⌂
-              </span>
+        {!isHotelLoading && !hotelError && !hotel && (
+          <section className={styles.messageCard}>
+            <h1>Hotel unavailable</h1>
+            <p>Hotel information could not be found. Please try again.</p>
 
-              <span className={styles.imageLabel}>PARADISE STAYS</span>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={handleRetry}
+            >
+              Try Again
+            </button>
+
+            <Link to="/home" className={styles.primaryButton}>
+              Browse Hotels
+            </Link>
+          </section>
+        )}
+
+        {hotel && !hotelError && (
+          <>
+            {/* HOTEL PHOTO GALLERY */}
+            <section
+              className={styles.heroImage}
+              aria-label={`${hotel.name} photo gallery`}
+            >
+              {isImagesLoading ? (
+                <p className={styles.statusMessage} role="status">
+                  Loading hotel photos...
+                </p>
+              ) : hotelImages.length > 0 ? (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      hotelImages.length === 1
+                        ? "1fr"
+                        : "repeat(auto-fit, minmax(180px, 1fr))",
+                    gap: "10px",
+                    width: "100%",
+                    height: "100%",
+                    padding: "10px",
+                    boxSizing: "border-box",
+                    overflowY: "auto",
+                  }}
+                >
+                  {hotelImages.map((image) => (
+                    <img
+                      key={image.id}
+                      src={image.image_url}
+                      alt={`${hotel.name} accommodation`}
+                      loading="lazy"
+                      style={{
+                        width: "100%",
+                        height: "220px",
+                        objectFit: "cover",
+                        borderRadius: "10px",
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <span className={styles.heroIcon} aria-hidden="true">
+                    ⌂
+                  </span>
+
+                  <span className={styles.imageLabel}>PARADISE STAYS</span>
+                </>
+              )}
             </section>
 
             <section className={styles.detailsCard}>
@@ -194,7 +299,6 @@ const HotelDetails = () => {
 
               <section className={styles.infoSection}>
                 <h2>About this accommodation</h2>
-
                 <p className={styles.description}>{hotel.description}</p>
               </section>
 
@@ -209,7 +313,6 @@ const HotelDetails = () => {
                 </div>
 
                 <div className={styles.actionButtons}>
-                  {/* Heart-only favourites button */}
                   <button
                     type="button"
                     className={`${styles.favouriteButton} ${
