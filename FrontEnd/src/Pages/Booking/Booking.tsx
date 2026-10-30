@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,8 +7,10 @@ import type { RootState, AppDispatch } from "../../Store/store";
 
 import { fetchHotelById } from "../../ReduxSlice/hotelSlice";
 import { fetchRoomsByHotel, type Room } from "../../ReduxSlice/roomSlice";
+
 import {
   createBooking,
+  initializeBookingPayment,
   clearBookingError,
   clearBookingSuccess,
 } from "../../ReduxSlice/bookingSlice";
@@ -38,7 +41,6 @@ const Booking = () => {
     selectedBooking,
     isSaving,
     error: bookingError,
-    successMessage,
   } = useSelector((state: RootState) => state.bookings);
 
   const [roomId, setRoomId] = useState("");
@@ -70,7 +72,7 @@ const Booking = () => {
     };
   }, [dispatch]);
 
-  // Keep only rooms belonging to the hotel selected by the customer.
+  // Keep only rooms belonging to the selected hotel.
   const displayedRooms = roomsList.filter(
     (room: Room) => Number(room.hotel_id) === hotelId,
   );
@@ -90,7 +92,9 @@ const Booking = () => {
         )
       : 0;
 
-  const nightlyPrice = selectedRoom ? Number(selectedRoom.price_per_night) : 0;
+  const nightlyPrice = selectedRoom
+    ? Number(selectedRoom.price_per_night)
+    : 0;
 
   const totalPrice = nights * rooms * nightlyPrice;
 
@@ -100,7 +104,9 @@ const Booking = () => {
       maximumFractionDigits: 2,
     })}`;
 
-  const handleBooking = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleBooking = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     setFormError("");
 
@@ -159,18 +165,45 @@ const Booking = () => {
     }
 
     try {
-      await dispatch(
-        createBooking({
-          hotel_id: hotelId,
-          room_id: Number(selectedRoom.id),
-          check_in: checkIn,
-          check_out: checkOut,
-          rooms,
-          guests,
-        }),
+      // Reuse an existing matching pending booking if payment
+      // initialization previously failed. This avoids duplicate bookings.
+      const existingBooking =
+        selectedBooking &&
+        selectedBooking.status === "pending" &&
+        Number(selectedBooking.hotel_id) === hotelId &&
+        Number(selectedBooking.room_id) === Number(selectedRoom.id) &&
+        selectedBooking.check_in.slice(0, 10) === checkIn &&
+        selectedBooking.check_out.slice(0, 10) === checkOut &&
+        Number(selectedBooking.rooms) === rooms &&
+        Number(selectedBooking.guests) === guests
+          ? selectedBooking
+          : null;
+
+      // Step 1: Create the booking, unless a matching pending
+      // booking already exists.
+      const booking = existingBooking
+        ? existingBooking
+        : await dispatch(
+            createBooking({
+              hotel_id: hotelId,
+              room_id: Number(selectedRoom.id),
+              check_in: checkIn,
+              check_out: checkOut,
+              rooms,
+              guests,
+            }),
+          ).unwrap();
+
+      // Step 2: Initialize payment using the booking ID.
+      const payment = await dispatch(
+        initializeBookingPayment(booking.id),
       ).unwrap();
-    } catch {
-      // Redux stores the backend error in bookingError.
+
+      // Step 3: Redirect the customer to Paystack.
+      window.location.href = payment.authorization_url;
+    } catch (error) {
+      // Redux stores API errors in bookingError.
+      console.error("Booking or payment initialization failed:", error);
     }
   };
 
@@ -214,6 +247,7 @@ const Booking = () => {
           </button>
 
           <h1>Book Your Stay</h1>
+
           <p className={styles.intro}>
             Choose your dates and room details to make your reservation.
           </p>
@@ -251,13 +285,6 @@ const Booking = () => {
             </div>
           )}
 
-          {successMessage && selectedBooking && (
-            <div className={styles.success} role="status">
-              <h5>Booking created successfully!</h5>
-
-            </div>
-          )}
-
           {!loading && !loadError && displayedRooms.length === 0 && (
             <p className={styles.message}>
               No room types have been added to this hotel yet.
@@ -267,6 +294,7 @@ const Booking = () => {
           {!loading && displayedRooms.length > 0 && (
             <form className={styles.form} onSubmit={handleBooking}>
               <label htmlFor="room">Room type</label>
+
               <select
                 id="room"
                 value={roomId}
@@ -274,6 +302,7 @@ const Booking = () => {
                 required
               >
                 <option value="">Choose a room type</option>
+
                 {displayedRooms.map((room) => (
                   <option key={room.id} value={room.id}>
                     {room.room_type} —{" "}
@@ -286,7 +315,9 @@ const Booking = () => {
                 <div className={styles.roomInfo}>
                   <h3>{selectedRoom.room_type}</h3>
                   <p>{selectedRoom.description}</p>
-                  <p>Maximum guests per room: {selectedRoom.capacity}</p>
+                  <p>
+                    Maximum guests per room: {selectedRoom.capacity}
+                  </p>
                 </div>
               )}
 
@@ -349,12 +380,18 @@ const Booking = () => {
 
               <div className={styles.priceSummary}>
                 <h2>Price Summary</h2>
-                <p>Price per room, per night: {formatPrice(nightlyPrice)}</p>
+
+                <p>
+                  Price per room, per night: {formatPrice(nightlyPrice)}
+                </p>
+
                 <p>Number of nights: {nights}</p>
                 <p>Number of rooms: {rooms}</p>
+
                 <div className={styles.total}>
                   Estimated total: {formatPrice(totalPrice)}
                 </div>
+
                 <p className={styles.note}>
                   The server validates availability and calculates the final
                   booking price.
@@ -372,7 +409,7 @@ const Booking = () => {
                   totalPrice <= 0
                 }
               >
-                {isSaving ? "Creating booking..." : "Confirm Booking"}
+                {isSaving ? "Preparing payment..." : "Proceed to Payment"}
               </button>
 
               {!token && (
