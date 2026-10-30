@@ -14,7 +14,7 @@ import Booking from "./Pages/Booking/Booking";
 import MyBookings from "./Pages/MyBookings/MyBookings";
 import Profile from "./Pages/Profile/Profile";
 import ManageRooms from "./Pages/ManageRooms/ManageRooms";
-
+import AdminBookings from "./Pages/AdminBookings/AdminBookings";
 const App = () => {
   return (
     <BrowserRouter>
@@ -42,6 +42,7 @@ const App = () => {
             path="/admin/hotels/:hotelId/rooms"
             element={<ManageRooms />}
           />
+          <Route path="/admin/bookings" element={<AdminBookings />} />
         </Route>
       </Routes>
     </BrowserRouter>
