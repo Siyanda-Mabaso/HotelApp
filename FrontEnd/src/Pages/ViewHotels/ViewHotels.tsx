@@ -160,6 +160,7 @@ const ViewHotels = () => {
             country: formData.country.trim(),
             star_rating: starRating,
             price_per_night: pricePerNight,
+            facilities: editingHotel.facilities ?? [],
           },
         }),
       ).unwrap();
