@@ -31,7 +31,18 @@ export interface CreateBookingInput {
   rooms: number;
   guests: number;
 }
+export interface PaymentInitialization {
+  message: string;
+  authorization_url: string;
+  reference: string;
+  booking_id: number;
+  amount: number;
+}
 
+export interface VerifyPaymentInput {
+  bookingId: number;
+  reference: string;
+}
 interface BookingState {
   bookings: Booking[];
   selectedBooking: Booking | null;
@@ -89,7 +100,86 @@ export const createBooking = createAsyncThunk<
     }
   },
 );
+// Initialize Paystack payment for a booking
+export const initializeBookingPayment = createAsyncThunk<
+  PaymentInitialization,
+  number,
+  { state: ThunkState; rejectValue: string }
+>(
+  "bookings/initializeBookingPayment",
+  async (bookingId, { getState, rejectWithValue }) => {
+    try {
+      const token = getAuthToken(getState());
 
+      if (!token) {
+        return rejectWithValue("Please log in to make a payment.");
+      }
+
+      const response = await axios.post(
+        "/api/payments/initialize",
+        { bookingId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      return response.data as PaymentInitialization;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue(
+          error.response?.data?.message ||
+            "Failed to initialize payment.",
+        );
+      }
+
+      return rejectWithValue("An unexpected error occurred.");
+    }
+  },
+);
+
+// Verify Paystack payment
+export const verifyBookingPayment = createAsyncThunk<
+  Booking,
+  VerifyPaymentInput,
+  { state: ThunkState; rejectValue: string }
+>(
+  "bookings/verifyBookingPayment",
+  async ({ bookingId, reference }, { getState, rejectWithValue }) => {
+    try {
+      const token = getAuthToken(getState());
+
+      if (!token) {
+        return rejectWithValue("Please log in to verify your payment.");
+      }
+
+      const response = await axios.post(
+        "/api/payments/verify",
+        {
+          bookingId,
+          reference,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      return response.data.booking as Booking;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue(
+          error.response?.data?.message ||
+            "Payment verification failed.",
+        );
+      }
+
+      return rejectWithValue("An unexpected error occurred.");
+    }
+  },
+);
 // Fetch bookings belonging to the logged-in user (or all for an admin)
 export const fetchBookings = createAsyncThunk<
   Booking[],
@@ -280,6 +370,46 @@ const bookingSlice = createSlice({
         state.isSaving = false;
         state.error =
           action.payload || action.error.message || "Failed to create booking.";
+      })
+
+            // Initialize Paystack payment
+      .addCase(initializeBookingPayment.pending, (state) => {
+        state.isSaving = true;
+        state.error = null;
+      })
+      .addCase(initializeBookingPayment.fulfilled, (state) => {
+        state.isSaving = false;
+      })
+      .addCase(initializeBookingPayment.rejected, (state, action) => {
+        state.isSaving = false;
+        state.error =
+          action.payload ||
+          action.error.message ||
+          "Failed to initialize payment.";
+      })
+
+      // Verify Paystack payment
+      .addCase(verifyBookingPayment.pending, (state) => {
+        state.isSaving = true;
+        state.error = null;
+      })
+      .addCase(verifyBookingPayment.fulfilled, (state, action) => {
+        state.isSaving = false;
+        state.selectedBooking = action.payload;
+
+        state.bookings = state.bookings.map((booking) =>
+          booking.id === action.payload.id ? action.payload : booking,
+        );
+
+        state.successMessage =
+          "Payment successful! Your booking is confirmed.";
+      })
+      .addCase(verifyBookingPayment.rejected, (state, action) => {
+        state.isSaving = false;
+        state.error =
+          action.payload ||
+          action.error.message ||
+          "Payment verification failed.";
       })
 
       // Fetch customer bookings
