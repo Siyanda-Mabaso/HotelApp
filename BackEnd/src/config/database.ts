@@ -1,5 +1,7 @@
 import { Pool } from "pg";
 import dotenv from "dotenv";
+import dns from "dns";
+import net from "net";
 import { createUserTable } from "../services/userServices";
 import { createHotelTable } from "../services/hotelServices";
 import { createBookingTable } from "../services/bookingServices";
@@ -10,12 +12,12 @@ import { createImageTable } from "../services/imageServices";
 
 dotenv.config();
 
+dns.setDefaultResultOrder("ipv4first");
+net.setDefaultAutoSelectFamilyAttemptTimeout(5000);
+
 const pool = new Pool({
-user: process.env.DB_USER,
-host: process.env.DB_HOST,
-database: process.env.DB_NAME,
-password: process.env.DB_PASSWORD,
-port: parseInt(process.env.DB_PORT || "5432"),
+  connectionString: process.env.DATABASE_URL,
+  connectionTimeoutMillis: 30000,
 });
 
 export const query = (text: string, params?: any[]) => {
