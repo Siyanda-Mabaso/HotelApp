@@ -9,6 +9,7 @@ import reviewRoutes from "./routes/reviewRoutes";
 import favouriteRoutes from "./routes/favouriteRoutes";
 import roomRoutes from "./routes/roomRoutes";
 import imageRoutes from "./routes/imageRoutes";
+import paymentRoutes from "./routes/paymentRoutes";
 import cors from "cors";
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use("/api", userRoutes);
 app.use("/api", hotelRoutes);
 app.use("/api", bookingRoutes);
+app.use("/api", paymentRoutes);
 app.use("/api", reviewRoutes);
 app.use("/api", favouriteRoutes);
 app.use("/api", roomRoutes);

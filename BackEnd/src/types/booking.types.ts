@@ -11,4 +11,5 @@ export interface Booking {
     total_price: number;
     status: "pending" | "confirmed" | "cancelled";
     created_at: Date;
+    payment_reference?: string | null;
 }

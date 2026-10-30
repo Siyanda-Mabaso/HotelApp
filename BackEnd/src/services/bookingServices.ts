@@ -1,4 +1,3 @@
-
 import { query } from "../config/database";
 import { Booking } from "../types/booking.types";
 
@@ -27,6 +26,8 @@ export const createBookingTable = async (): Promise<void> => {
         total_price NUMERIC(10, 2) NOT NULL
           CHECK (total_price >= 0),
 
+        payment_reference VARCHAR(100) UNIQUE,
+
         status VARCHAR(20) NOT NULL DEFAULT 'pending'
           CHECK (
             status IN ('pending', 'confirmed', 'cancelled')
@@ -44,6 +45,20 @@ export const createBookingTable = async (): Promise<void> => {
       ALTER TABLE bookings
       ADD COLUMN IF NOT EXISTS room_id INTEGER
       REFERENCES rooms(id) ON DELETE RESTRICT
+    `);
+
+    // Add payment_reference to an existing bookings table
+    await query(`
+      ALTER TABLE bookings
+      ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(100)
+    `);
+
+    // Ensure payment references are unique
+    await query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS
+      idx_bookings_payment_reference
+      ON bookings(payment_reference)
+      WHERE payment_reference IS NOT NULL
     `);
 
     console.log("Bookings table is ready");
@@ -134,9 +149,7 @@ export const findBookingsByUserId = async (userId: number) => {
 };
 
 // Get one booking by ID
-export const findBookingById = async (
-  id: number,
-): Promise<Booking | null> => {
+export const findBookingById = async (id: number): Promise<Booking | null> => {
   const { rows } = await query(
     `SELECT *
      FROM bookings
@@ -197,4 +210,60 @@ export const countBookedRooms = async (
   );
 
   return Number(rows[0].booked_rooms);
+};
+
+// Save Paystack payment reference against a booking
+export const saveBookingPaymentReference = async (
+  bookingId: number,
+  userId: number,
+  reference: string,
+): Promise<Booking | null> => {
+  const { rows } = await query(
+    `UPDATE bookings
+     SET payment_reference = $3
+     WHERE id = $1
+       AND user_id = $2
+       AND status = 'pending'
+       AND payment_reference IS NULL
+     RETURNING *`,
+    [bookingId, userId, reference],
+  );
+
+  return rows[0] || null;
+};
+
+// Confirm booking after successful Paystack verification
+export const confirmBookingPayment = async (
+  bookingId: number,
+  userId: number,
+  reference: string,
+): Promise<Booking | null> => {
+  const { rows } = await query(
+    `UPDATE bookings
+     SET status = 'confirmed'
+     WHERE id = $1
+       AND user_id = $2
+       AND payment_reference = $3
+       AND status = 'pending'
+     RETURNING *`,
+    [bookingId, userId, reference],
+  );
+
+  return rows[0] || null;
+};
+// Clear payment reference if Paystack initialization fails
+export const clearBookingPaymentReference = async (
+  bookingId: number,
+  userId: number,
+  reference: string
+): Promise<void> => {
+  await query(
+    `UPDATE bookings
+     SET payment_reference = NULL
+     WHERE id = $1
+       AND user_id = $2
+       AND payment_reference = $3
+       AND status = 'pending'`,
+    [bookingId, userId, reference]
+  );
 };
