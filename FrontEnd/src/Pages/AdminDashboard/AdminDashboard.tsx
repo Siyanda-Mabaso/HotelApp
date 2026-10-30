@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
@@ -15,7 +14,7 @@ const AdminDashboard = () => {
             <p className={styles.eyebrow}>PARADISE MANAGEMENT</p>
             <h1>Admin Dashboard</h1>
             <p className={styles.subtitle}>
-              Manage your accommodations on Paradise.
+              Manage your accommodations and customer bookings on Paradise.
             </p>
           </div>
 
@@ -54,8 +53,35 @@ const AdminDashboard = () => {
 
           <div className={styles.note}>
             <strong>Administrator access</strong>
+            <p>Only administrators can add, edit, or delete hotel listings.</p>
+          </div>
+        </section>
+
+        {/* Booking Management */}
+        <section className={styles.managementSection}>
+          <div>
+            <h2>Booking Management</h2>
+            <p>View customer reservations and manage individual bookings.</p>
+          </div>
+
+          <div className={styles.actions}>
+            <Link to="/admin/bookings" className={styles.actionLink}>
+              <span className={styles.actionIcon}>▤</span>
+              <span>
+                <strong>View Bookings</strong>
+                <small>
+                  Review reservations, customer details, and booking status
+                </small>
+              </span>
+              <span className={styles.arrow}>→</span>
+            </Link>
+          </div>
+
+          <div className={styles.note}>
+            <strong>Booking administration</strong>
             <p>
-              Only administrators can add, edit, or delete hotel listings.
+              Administrators can view all bookings and delete individual
+              bookings without deleting customer accounts.
             </p>
           </div>
         </section>

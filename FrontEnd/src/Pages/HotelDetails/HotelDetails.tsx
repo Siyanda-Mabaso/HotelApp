@@ -3,11 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { RootState, AppDispatch } from "../../Store/store";
-
 import { fetchHotelById, clearHotelError } from "../../ReduxSlice/hotelSlice";
-
 import { fetchHotelImages, type HotelImage } from "../../ReduxSlice/imageSlice";
-
 import {
   fetchFavourites,
   addFavourite,
@@ -16,7 +13,6 @@ import {
 
 import Navbar from "../../Components/Navbar/Navbar";
 import Footer from "../../Components/Footer/Footer";
-
 import styles from "./HotelDetails.module.css";
 
 const HotelDetails = () => {
@@ -34,6 +30,7 @@ const HotelDetails = () => {
 
   const [favouriteMessage, setFavouriteMessage] = useState("");
   const [isSavingFavourite, setIsSavingFavourite] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
 
   const [hotelImages, setHotelImages] = useState<HotelImage[]>([]);
   const [isImagesLoading, setIsImagesLoading] = useState(false);
@@ -52,7 +49,7 @@ const HotelDetails = () => {
     void dispatch(fetchHotelById(id));
   }, [dispatch, id, validHotelId]);
 
-  // Load the gallery for the current hotel.
+  // Load images belonging to this hotel.
   useEffect(() => {
     if (!validHotelId || !id) {
       setHotelImages([]);
@@ -101,6 +98,7 @@ const HotelDetails = () => {
     ? favourites.some((favourite) => favourite.hotel_id === hotel.id)
     : false;
 
+  // Add or remove a hotel from favourites.
   const handleFavouriteClick = async () => {
     if (!token) {
       navigate("/login");
@@ -140,6 +138,41 @@ const HotelDetails = () => {
       );
     } finally {
       setIsSavingFavourite(false);
+    }
+  };
+
+  // Share the hotel link.
+  const handleShare = async () => {
+    if (!hotel) return;
+
+    setShareMessage("");
+
+    const url = window.location.href;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: hotel.name,
+          text: `Take a look at ${hotel.name} on Paradise.`,
+          url,
+        });
+
+        setShareMessage("Hotel shared successfully.");
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+
+        setShareMessage("Hotel link copied to clipboard.");
+      } else {
+        setShareMessage(
+          "Sharing is not supported by this browser. Copy the page URL from your address bar.",
+        );
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
+
+      setShareMessage("Unable to share the hotel link.");
     }
   };
 
@@ -226,7 +259,7 @@ const HotelDetails = () => {
 
         {hotel && !hotelError && (
           <>
-            {/* HOTEL PHOTO GALLERY */}
+            {/* Hotel photo gallery */}
             <section
               className={styles.heroImage}
               aria-label={`${hotel.name} photo gallery`}
@@ -236,47 +269,31 @@ const HotelDetails = () => {
                   Loading hotel photos...
                 </p>
               ) : hotelImages.length > 0 ? (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      hotelImages.length === 1
-                        ? "1fr"
-                        : "repeat(auto-fit, minmax(180px, 1fr))",
-                    gap: "10px",
-                    width: "100%",
-                    height: "100%",
-                    padding: "10px",
-                    boxSizing: "border-box",
-                    overflowY: "auto",
-                  }}
-                >
+                <div className={styles.galleryGrid}>
                   {hotelImages.map((image) => (
                     <img
                       key={image.id}
                       src={image.image_url}
                       alt={`${hotel.name} accommodation`}
                       loading="lazy"
-                      style={{
-                        width: "100%",
-                        height: "220px",
-                        objectFit: "cover",
-                        borderRadius: "10px",
-                      }}
+                      className={styles.galleryImage}
                     />
                   ))}
                 </div>
               ) : (
-                <>
+                <div className={styles.galleryFallback}>
                   <span className={styles.heroIcon} aria-hidden="true">
                     ⌂
                   </span>
 
                   <span className={styles.imageLabel}>PARADISE STAYS</span>
-                </>
+
+                  <p>No hotel photos available yet.</p>
+                </div>
               )}
             </section>
 
+            {/* Main hotel information */}
             <section className={styles.detailsCard}>
               <div className={styles.titleRow}>
                 <div>
@@ -290,18 +307,88 @@ const HotelDetails = () => {
                   </p>
                 </div>
 
-                <div className={styles.rating}>
-                  <span aria-hidden="true">★</span> {hotel.star_rating} / 5
+                <div
+                  className={styles.rating}
+                  aria-label={
+                    hotel.star_rating != null
+                      ? `${hotel.star_rating} out of 5 stars`
+                      : "Star rating not available"
+                  }
+                >
+                  <span aria-hidden="true">★</span>{" "}
+                  {hotel.star_rating != null
+                    ? `${hotel.star_rating} / 5`
+                    : "Not rated"}
                 </div>
               </div>
 
               <hr className={styles.divider} />
 
+              {/* Description */}
               <section className={styles.infoSection}>
                 <h2>About this accommodation</h2>
-                <p className={styles.description}>{hotel.description}</p>
+
+                <p className={styles.description}>
+                  {hotel.description ||
+                    "More information about this accommodation will be available soon."}
+                </p>
               </section>
 
+              {/* Actual facilities saved by the admin */}
+              <section className={styles.infoSection}>
+                <h2>Facilities and amenities</h2>
+
+                {hotel.facilities && hotel.facilities.length > 0 ? (
+                  <div className={styles.facilitiesGrid}>
+                    {hotel.facilities.map((facility, index) => (
+                      <div
+                        key={`${facility}-${index}`}
+                        className={styles.facilityItem}
+                      >
+                        <span aria-hidden="true">✓</span>
+
+                        {facility}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.sectionNote}>
+                    No facilities have been added for this hotel yet.
+                  </p>
+                )}
+              </section>
+
+              {/* Hotel location and map */}
+              <section className={styles.infoSection}>
+                <h2>Location</h2>
+
+                <p className={styles.locationAddress}>
+                  {hotel.address}, {hotel.city}, {hotel.country}
+                </p>
+
+                <iframe
+                  title={`Map showing ${hotel.name}`}
+                  className={styles.mapFrame}
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                    `${hotel.address}, ${hotel.city}, ${hotel.country}`,
+                  )}&output=embed`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+
+                <a
+                  className={styles.mapLink}
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    `${hotel.address}, ${hotel.city}, ${hotel.country}`,
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open in Google Maps ↗
+                </a>
+              </section>
+
+              {/* Price and customer actions */}
               <section className={styles.priceSection}>
                 <div>
                   <p className={styles.priceLabel}>Price per night</p>
@@ -337,6 +424,14 @@ const HotelDetails = () => {
 
                   <button
                     type="button"
+                    className={styles.secondaryButton}
+                    onClick={handleShare}
+                  >
+                    Share Hotel
+                  </button>
+
+                  <button
+                    type="button"
                     className={styles.primaryButton}
                     onClick={() => navigate(`/hotels/${hotel.id}/book`)}
                   >
@@ -348,6 +443,12 @@ const HotelDetails = () => {
               {favouriteMessage && (
                 <p className={styles.favouriteMessage} role="status">
                   {favouriteMessage}
+                </p>
+              )}
+
+              {shareMessage && (
+                <p role="status" className={styles.shareMessage}>
+                  {shareMessage}
                 </p>
               )}
             </section>

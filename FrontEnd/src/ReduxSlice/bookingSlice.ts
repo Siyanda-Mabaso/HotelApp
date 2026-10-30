@@ -5,7 +5,7 @@ export interface Booking {
   id: number;
   user_id: number;
   hotel_id: number;
-  room_id: number;
+  room_id: number | null;
   check_in: string;
   check_out: string;
   rooms: number;
@@ -13,6 +13,14 @@ export interface Booking {
   total_price: number;
   status: "pending" | "confirmed" | "cancelled";
   created_at?: string;
+
+  // Additional details returned by the backend for the admin page
+  customer_name?: string;
+  customer_email?: string;
+  hotel_name?: string;
+  hotel_city?: string;
+  hotel_country?: string;
+  room_type?: string;
 }
 
 export interface CreateBookingInput {
@@ -48,10 +56,9 @@ const initialState: BookingState = {
   successMessage: null,
 };
 
-// Get the logged-in user's token from Redux.
 const getAuthToken = (state: ThunkState) => state.login.token;
 
-// Create a booking.
+// Create a booking
 export const createBooking = createAsyncThunk<
   Booking,
   CreateBookingInput,
@@ -67,9 +74,7 @@ export const createBooking = createAsyncThunk<
       }
 
       const response = await axios.post("/api/bookings", bookingData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       return response.data.booking as Booking;
@@ -85,7 +90,7 @@ export const createBooking = createAsyncThunk<
   },
 );
 
-// Fetch all bookings for the logged-in user or according to backend permissions.
+// Fetch bookings belonging to the logged-in user (or all for an admin)
 export const fetchBookings = createAsyncThunk<
   Booking[],
   void,
@@ -99,9 +104,7 @@ export const fetchBookings = createAsyncThunk<
     }
 
     const response = await axios.get("/api/bookings", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     return response.data.bookings as Booking[];
@@ -116,7 +119,36 @@ export const fetchBookings = createAsyncThunk<
   }
 });
 
-// Fetch one booking by ID.
+// Fetch all bookings using the admin-only endpoint
+export const fetchAdminBookings = createAsyncThunk<
+  Booking[],
+  void,
+  { state: ThunkState; rejectValue: string }
+>("bookings/fetchAdminBookings", async (_, { getState, rejectWithValue }) => {
+  try {
+    const token = getAuthToken(getState());
+
+    if (!token) {
+      return rejectWithValue("Please log in to view bookings.");
+    }
+
+    const response = await axios.get("/api/bookings/admin", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    return response.data.bookings as Booking[];
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch all bookings.",
+      );
+    }
+
+    return rejectWithValue("An unexpected error occurred.");
+  }
+});
+
+// Fetch one booking by ID
 export const fetchBookingById = createAsyncThunk<
   Booking,
   number,
@@ -132,9 +164,7 @@ export const fetchBookingById = createAsyncThunk<
       }
 
       const response = await axios.get(`/api/bookings/${bookingId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       return response.data.booking as Booking;
@@ -150,7 +180,7 @@ export const fetchBookingById = createAsyncThunk<
   },
 );
 
-// Cancel a booking.
+// Cancel a booking (existing behavior)
 export const cancelBooking = createAsyncThunk<
   Booking,
   number,
@@ -166,9 +196,7 @@ export const cancelBooking = createAsyncThunk<
       }
 
       const response = await axios.delete(`/api/bookings/${bookingId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       return response.data.booking as Booking;
@@ -176,6 +204,38 @@ export const cancelBooking = createAsyncThunk<
       if (axios.isAxiosError(error)) {
         return rejectWithValue(
           error.response?.data?.message || "Failed to cancel booking.",
+        );
+      }
+
+      return rejectWithValue("An unexpected error occurred.");
+    }
+  },
+);
+
+// Permanently delete one booking (admin only)
+export const deleteAdminBooking = createAsyncThunk<
+  number,
+  number,
+  { state: ThunkState; rejectValue: string }
+>(
+  "bookings/deleteAdminBooking",
+  async (bookingId, { getState, rejectWithValue }) => {
+    try {
+      const token = getAuthToken(getState());
+
+      if (!token) {
+        return rejectWithValue("Please log in first.");
+      }
+
+      await axios.delete(`/api/bookings/admin/${bookingId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return bookingId;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue(
+          error.response?.data?.message || "Failed to delete booking.",
         );
       }
 
@@ -210,11 +270,7 @@ const bookingSlice = createSlice({
         state.isSaving = false;
         state.selectedBooking = action.payload;
 
-        const existingIndex = state.bookings.findIndex(
-          (booking) => booking.id === action.payload.id,
-        );
-
-        if (existingIndex === -1) {
+        if (!state.bookings.some((b) => b.id === action.payload.id)) {
           state.bookings.unshift(action.payload);
         }
 
@@ -226,7 +282,7 @@ const bookingSlice = createSlice({
           action.payload || action.error.message || "Failed to create booking.";
       })
 
-      // Fetch all bookings
+      // Fetch customer bookings
       .addCase(fetchBookings.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -239,6 +295,23 @@ const bookingSlice = createSlice({
         state.isLoading = false;
         state.error =
           action.payload || action.error.message || "Failed to fetch bookings.";
+      })
+
+      // Fetch all admin bookings
+      .addCase(fetchAdminBookings.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchAdminBookings.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.bookings = action.payload;
+      })
+      .addCase(fetchAdminBookings.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error =
+          action.payload ||
+          action.error.message ||
+          "Failed to fetch admin bookings.";
       })
 
       // Fetch one booking
@@ -278,6 +351,30 @@ const bookingSlice = createSlice({
         state.isSaving = false;
         state.error =
           action.payload || action.error.message || "Failed to cancel booking.";
+      })
+
+      // Delete one admin booking
+      .addCase(deleteAdminBooking.pending, (state) => {
+        state.isSaving = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(deleteAdminBooking.fulfilled, (state, action) => {
+        state.isSaving = false;
+        state.bookings = state.bookings.filter(
+          (booking) => booking.id !== action.payload,
+        );
+
+        if (state.selectedBooking?.id === action.payload) {
+          state.selectedBooking = null;
+        }
+
+        state.successMessage = "Booking deleted successfully.";
+      })
+      .addCase(deleteAdminBooking.rejected, (state, action) => {
+        state.isSaving = false;
+        state.error =
+          action.payload || action.error.message || "Failed to delete booking.";
       });
   },
 });

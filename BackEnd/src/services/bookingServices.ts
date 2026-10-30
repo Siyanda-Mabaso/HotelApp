@@ -1,3 +1,4 @@
+
 import { query } from "../config/database";
 import { Booking } from "../types/booking.types";
 
@@ -5,45 +6,45 @@ import { Booking } from "../types/booking.types";
 export const createBookingTable = async (): Promise<void> => {
   try {
     await query(`
-            CREATE TABLE IF NOT EXISTS bookings (
-                id SERIAL PRIMARY KEY,
+      CREATE TABLE IF NOT EXISTS bookings (
+        id SERIAL PRIMARY KEY,
 
-                user_id INTEGER NOT NULL
-                    REFERENCES users(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL
+          REFERENCES users(id) ON DELETE CASCADE,
 
-                hotel_id INTEGER NOT NULL
-                    REFERENCES hotels(id) ON DELETE CASCADE,
+        hotel_id INTEGER NOT NULL
+          REFERENCES hotels(id) ON DELETE CASCADE,
 
-                room_id INTEGER
-                    REFERENCES rooms(id) ON DELETE RESTRICT,
+        room_id INTEGER
+          REFERENCES rooms(id) ON DELETE RESTRICT,
 
-                check_in DATE NOT NULL,
-                check_out DATE NOT NULL,
+        check_in DATE NOT NULL,
+        check_out DATE NOT NULL,
 
-                rooms INTEGER NOT NULL CHECK (rooms > 0),
-                guests INTEGER NOT NULL CHECK (guests > 0),
+        rooms INTEGER NOT NULL CHECK (rooms > 0),
+        guests INTEGER NOT NULL CHECK (guests > 0),
 
-                total_price NUMERIC(10, 2) NOT NULL
-                    CHECK (total_price >= 0),
+        total_price NUMERIC(10, 2) NOT NULL
+          CHECK (total_price >= 0),
 
-                status VARCHAR(20) NOT NULL DEFAULT 'pending'
-                    CHECK (
-                        status IN ('pending', 'confirmed', 'cancelled')
-                    ),
+        status VARCHAR(20) NOT NULL DEFAULT 'pending'
+          CHECK (
+            status IN ('pending', 'confirmed', 'cancelled')
+          ),
 
-                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 
-                CONSTRAINT valid_booking_dates
-                    CHECK (check_out > check_in)
-            )
-        `);
+        CONSTRAINT valid_booking_dates
+          CHECK (check_out > check_in)
+      )
+    `);
 
     // Add room_id to an existing bookings table safely
     await query(`
-            ALTER TABLE bookings
-            ADD COLUMN IF NOT EXISTS room_id INTEGER
-            REFERENCES rooms(id) ON DELETE RESTRICT
-        `);
+      ALTER TABLE bookings
+      ADD COLUMN IF NOT EXISTS room_id INTEGER
+      REFERENCES rooms(id) ON DELETE RESTRICT
+    `);
 
     console.log("Bookings table is ready");
   } catch (error) {
@@ -65,17 +66,17 @@ export const createBooking = async (
 ): Promise<Booking> => {
   const { rows } = await query(
     `INSERT INTO bookings (
-            user_id,
-            hotel_id,
-            check_in,
-            check_out,
-            rooms,
-            guests,
-            total_price,
-            room_id
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING *`,
+      user_id,
+      hotel_id,
+      check_in,
+      check_out,
+      rooms,
+      guests,
+      total_price,
+      room_id
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    RETURNING *`,
     [
       userId,
       hotelId,
@@ -91,43 +92,55 @@ export const createBooking = async (
   return rows[0];
 };
 
-// Get all bookings
-export const findAllBookings = async (): Promise<Booking[]> => {
+// Get all bookings with customer, hotel, and room details
+export const findAllBookings = async () => {
   const { rows } = await query(
-    `SELECT * FROM bookings
-         ORDER BY created_at DESC`,
+    `SELECT
+      bookings.*,
+      users.name AS customer_name,
+      users.email AS customer_email,
+      hotels.name AS hotel_name,
+      hotels.city AS hotel_city,
+      hotels.country AS hotel_country,
+      rooms.room_type AS room_type
+    FROM bookings
+    JOIN users ON bookings.user_id = users.id
+    JOIN hotels ON bookings.hotel_id = hotels.id
+    LEFT JOIN rooms ON bookings.room_id = rooms.id
+    ORDER BY bookings.created_at DESC`,
   );
 
   return rows;
 };
 
 // Get bookings for one user
-
 export const findBookingsByUserId = async (userId: number) => {
-    const { rows } = await query(
-        `SELECT
-            bookings.*,
-            hotels.name AS hotel_name,
-            hotels.city AS hotel_city,
-            hotels.country AS hotel_country,
-            rooms.room_type AS room_type
-         FROM bookings
-         JOIN hotels ON bookings.hotel_id = hotels.id
-         JOIN rooms ON bookings.room_id = rooms.id
-         WHERE bookings.user_id = $1
-         ORDER BY bookings.created_at DESC`,
-        [userId]
-    );
+  const { rows } = await query(
+    `SELECT
+      bookings.*,
+      hotels.name AS hotel_name,
+      hotels.city AS hotel_city,
+      hotels.country AS hotel_country,
+      rooms.room_type AS room_type
+    FROM bookings
+    JOIN hotels ON bookings.hotel_id = hotels.id
+    LEFT JOIN rooms ON bookings.room_id = rooms.id
+    WHERE bookings.user_id = $1
+    ORDER BY bookings.created_at DESC`,
+    [userId],
+  );
 
-    return rows;
+  return rows;
 };
 
-
 // Get one booking by ID
-export const findBookingById = async (id: number): Promise<Booking | null> => {
+export const findBookingById = async (
+  id: number,
+): Promise<Booking | null> => {
   const { rows } = await query(
-    `SELECT * FROM bookings
-         WHERE id = $1`,
+    `SELECT *
+     FROM bookings
+     WHERE id = $1`,
     [id],
   );
 
@@ -141,12 +154,27 @@ export const cancelBooking = async (
 ): Promise<Booking | null> => {
   const { rows } = await query(
     `UPDATE bookings
-         SET status = 'cancelled'
-         WHERE id = $1
-           AND user_id = $2
-           AND status <> 'cancelled'
-         RETURNING *`,
+     SET status = 'cancelled'
+     WHERE id = $1
+       AND user_id = $2
+       AND status <> 'cancelled'
+     RETURNING *`,
     [id, userId],
+  );
+
+  return rows[0] || null;
+};
+
+// Permanently delete one booking by ID
+// This deletes only the booking record, not the customer account.
+export const deleteBookingById = async (
+  id: number,
+): Promise<Booking | null> => {
+  const { rows } = await query(
+    `DELETE FROM bookings
+     WHERE id = $1
+     RETURNING *`,
+    [id],
   );
 
   return rows[0] || null;
@@ -160,14 +188,13 @@ export const countBookedRooms = async (
 ): Promise<number> => {
   const { rows } = await query(
     `SELECT COALESCE(SUM(rooms), 0) AS booked_rooms
-         FROM bookings
-         WHERE room_id = $1
-           AND status IN ('pending', 'confirmed')
-           AND check_in < $3
-           AND check_out > $2`,
+     FROM bookings
+     WHERE room_id = $1
+       AND status IN ('pending', 'confirmed')
+       AND check_in < $3
+       AND check_out > $2`,
     [roomId, checkIn, checkOut],
   );
 
   return Number(rows[0].booked_rooms);
 };
- 
