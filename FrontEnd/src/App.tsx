@@ -15,6 +15,7 @@ import MyBookings from "./Pages/MyBookings/MyBookings";
 import Profile from "./Pages/Profile/Profile";
 import ManageRooms from "./Pages/ManageRooms/ManageRooms";
 import AdminBookings from "./Pages/AdminBookings/AdminBookings";
+import PaymentCallback from "./Pages/PaymentCallback/PaymentCallback";
 const App = () => {
   return (
     <BrowserRouter>
@@ -31,6 +32,7 @@ const App = () => {
           <Route path="/hotels/:id/book" element={<Booking />} />
           <Route path="/my-bookings" element={<MyBookings />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/payment-callback" element={<PaymentCallback />} />
         </Route>
 
         {/* Admin-only pages */}

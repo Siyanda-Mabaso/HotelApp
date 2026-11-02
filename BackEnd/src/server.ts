@@ -22,7 +22,7 @@ app.use(express.json());
 app.use("/api", userRoutes);
 app.use("/api", hotelRoutes);
 app.use("/api", bookingRoutes);
-app.use("/api", paymentRoutes);
+app.use("/api/payments", paymentRoutes);
 app.use("/api", reviewRoutes);
 app.use("/api", favouriteRoutes);
 app.use("/api", roomRoutes);

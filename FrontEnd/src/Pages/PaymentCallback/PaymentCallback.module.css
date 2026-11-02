@@ -1,0 +1,145 @@
+
+.page {
+  min-height: 75vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: #f8fafc;
+}
+
+.container {
+  width: 100%;
+  max-width: 600px;
+  padding: 45px 35px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.07);
+  text-align: center;
+}
+
+.container h1 {
+  margin: 20px 0 12px;
+  color: #1e293b;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.container > p {
+  margin: 0 auto 25px;
+  max-width: 450px;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* Status icons */
+
+.icon,
+.successIcon,
+.errorIcon {
+  width: 75px;
+  height: 75px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 35px;
+  font-weight: 700;
+}
+
+.icon {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.successIcon {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.errorIcon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Booking details */
+
+.bookingDetails {
+  margin: 30px 0;
+  padding: 25px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.bookingDetails h2 {
+  margin: 0 0 20px;
+  color: #1e293b;
+  font-size: 20px;
+}
+
+.bookingDetails p {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 14px 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.bookingDetails strong {
+  color: #1e293b;
+  text-align: right;
+}
+
+/* Action button */
+
+.button {
+  width: 100%;
+  padding: 15px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.button:hover {
+  background: #115e59;
+  transform: translateY(-2px);
+}
+
+.button:focus-visible {
+  outline: 3px solid #99f6e4;
+  outline-offset: 3px;
+}
+
+/* Smaller screens */
+
+@media (max-width: 600px) {
+  .page {
+    padding: 35px 15px;
+  }
+
+  .container {
+    padding: 35px 20px;
+  }
+
+  .container h1 {
+    font-size: 23px;
+  }
+
+  .bookingDetails {
+    padding: 18px;
+  }
+
+  .bookingDetails p {
+    font-size: 13px;
+  }
+}
