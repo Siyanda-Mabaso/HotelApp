@@ -14,3 +14,4 @@ router.post("/initialize", protect, initializeBookingPayment);
 router.post("/verify", protect, verifyBookingPayment);
 
 export default router;
+       
