@@ -8,7 +8,9 @@ import {
   findUserById,
   updateUser,
   deleteUser,
+ findOrCreateGoogleUser,
 } from "../services/userServices";
+import { OAuth2Client } from "google-auth-library";
 
 // Register
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -475,6 +477,100 @@ export const deleteUserById = async (
 
     res.status(500).json({
       message: "Failed to delete user",
+    });
+  }
+};
+// Google OAuth login
+export const googleLogin = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential || typeof credential !== "string") {
+      res.status(400).json({
+        message: "Google credential is required",
+      });
+      return;
+    }
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+
+    if (!clientId) {
+      console.error("GOOGLE_CLIENT_ID is missing");
+
+      res.status(500).json({
+        message: "Google authentication is not configured",
+      });
+      return;
+    }
+
+    const googleClient = new OAuth2Client(clientId);
+
+    // Verify the Google identity token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: clientId,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (
+      !payload ||
+      !payload.email ||
+      payload.email_verified !== true
+    ) {
+      res.status(401).json({
+        message: "Google account could not be verified",
+      });
+      return;
+    }
+
+    // Find an existing user or create a new customer
+    const user = await findOrCreateGoogleUser(
+      payload.email,
+      payload.name || payload.email
+    );
+
+    const jwtSecret = process.env.JWT_SECRET;
+
+    if (!jwtSecret) {
+      console.error("JWT_SECRET is missing");
+
+      res.status(500).json({
+        message: "Authentication configuration error",
+      });
+      return;
+    }
+
+    // Generate Paradise's own JWT
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      jwtSecret,
+      { expiresIn: "1d" }
+    );
+
+    res.status(200).json({
+      message: "Google login successful",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+
+  } catch (error) {
+    console.error("Google login error:", error);
+
+    res.status(401).json({
+      message: "Google authentication failed",
     });
   }
 };
