@@ -242,26 +242,15 @@ const Home = () => {
 
                       <p className={styles.description}>{hotel.description}</p>
 
-                      <div className={styles.cardFooter}>
-                        <div className={styles.price}>
-                          <strong>
-                            R
-                            {Number(hotel.price_per_night).toLocaleString(
-                              "en-ZA",
-                            )}
-                          </strong>
-
-                          <span> / night</span>
-                        </div>
-
-                        <Link
-                          to={`/hotels/${hotel.id}`}
-                          className={styles.detailsButton}
-                          state={{ hotel }}
-                        >
-                          View Details
-                        </Link>
-                      </div>
+                     <div className={styles.cardFooter}>
+  <Link
+    to={`/hotels/${hotel.id}`}
+    className={styles.detailsButton}
+    state={{ hotel }}
+  >
+    View Details
+  </Link>
+</div>
                     </div>
                   </article>
                 );

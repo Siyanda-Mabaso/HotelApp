@@ -9,7 +9,6 @@ export interface Hotel {
   city: string;
   country: string;
   star_rating: number;
-  price_per_night: number;
   facilities: string[];
 }
 

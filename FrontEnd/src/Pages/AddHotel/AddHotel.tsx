@@ -27,7 +27,7 @@ interface HotelFormData {
   city: string;
   country: string;
   star_rating: string;
-  price_per_night: string;
+  
   facilities: string[];
 }
 
@@ -46,7 +46,6 @@ const initialFormData: HotelFormData = {
   city: "",
   country: "",
   star_rating: "",
-  price_per_night: "",
   facilities: [],
 };
 
@@ -213,21 +212,14 @@ const AddHotel = () => {
     }
 
     const starRating = Number(formData.star_rating);
-    const hotelPrice = Number(formData.price_per_night);
+  
 
     if (!Number.isInteger(starRating) || starRating < 1 || starRating > 5) {
       setFormError("Please select a valid hotel star rating.");
       return;
     }
 
-    if (
-      formData.price_per_night.trim() === "" ||
-      !Number.isFinite(hotelPrice) ||
-      hotelPrice < 0
-    ) {
-      setFormError("Please enter a valid hotel price per night.");
-      return;
-    }
+   
 
     // Validate image URLs before creating the hotel.
     const validImageUrls = imageUrls
@@ -303,19 +295,18 @@ const AddHotel = () => {
 
     try {
       // 1. Create the hotel.
-      const createdHotel = await dispatch(
-        createHotel({
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          address: formData.address.trim(),
-          city: formData.city.trim(),
-          country: formData.country.trim(),
-          star_rating: starRating,
-          price_per_night: hotelPrice,
-          facilities: formData.facilities,
-          token,
-        }),
-      ).unwrap();
+ const createdHotel = await dispatch(
+  createHotel({
+    name: formData.name.trim(),
+    description: formData.description.trim(),
+    address: formData.address.trim(),
+    city: formData.city.trim(),
+    country: formData.country.trim(),
+    star_rating: starRating,
+    facilities: formData.facilities,
+    token,
+  }),
+).unwrap();
 
       // 2. Save images against the newly created hotel.
       for (const imageUrl of validImageUrls) {
@@ -426,26 +417,26 @@ const AddHotel = () => {
           </div>
 
           <div className={styles.formRow}>
-            <div className={styles.inputGroup}>
-              <label htmlFor="star_rating">Star Rating</label>
-              <select
-                id="star_rating"
-                name="star_rating"
-                value={formData.star_rating}
-                onChange={(event) =>
-                  handleChange("star_rating", event.target.value)
-                }
-                required
-              >
-                <option value="">Select rating</option>
-                <option value="1">1 Star</option>
-                <option value="2">2 Stars</option>
-                <option value="3">3 Stars</option>
-                <option value="4">4 Stars</option>
-                <option value="5">5 Stars</option>
-              </select>
-            </div>
-
+        <div className={styles.inputGroup}>
+  <label htmlFor="star_rating">Star Rating</label>
+  <select
+    id="star_rating"
+    name="star_rating"
+    value={formData.star_rating}
+    onChange={(event) =>
+      handleChange("star_rating", event.target.value)
+    }
+    required
+  >
+    <option value="">Select rating</option>
+    <option value="1">1 Star</option>
+    <option value="2">2 Stars</option>
+    <option value="3">3 Stars</option>
+    <option value="4">4 Stars</option>
+    <option value="5">5 Stars</option>
+  </select>
+</div>
+{/* 
             <Input
               label="Hotel Price Per Night (R)"
               name="price_per_night"
@@ -454,7 +445,7 @@ const AddHotel = () => {
               value={formData.price_per_night}
               onChange={(value) => handleChange("price_per_night", value)}
               required
-            />
+            /> */}
           </div>
 
           <div className={styles.facilitiesSection}>
