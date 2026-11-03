@@ -1,3 +1,4 @@
+
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
@@ -77,6 +78,7 @@ const initialState: LoginState = {
   user: initialAuth?.user ?? null,
 };
 
+// Normal email and password login
 export const login = createAsyncThunk<
   AuthData,
   LoginData,
@@ -91,7 +93,6 @@ export const login = createAsyncThunk<
       return rejectWithValue("The server returned invalid login data.");
     }
 
-    // Persist authentication after a successful login.
     localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
 
     return authData;
@@ -107,6 +108,38 @@ export const login = createAsyncThunk<
   }
 });
 
+// Google login
+export const googleLogin = createAsyncThunk<
+  AuthData,
+  string,
+  { rejectValue: string }
+>("login/googleLogin", async (credential, { rejectWithValue }) => {
+  try {
+    const response = await axios.post("/api/google-login", {
+      credential,
+    });
+
+    const authData = response.data as AuthData;
+
+    if (!authData.token || !authData.user) {
+      return rejectWithValue("The server returned invalid Google login data.");
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
+
+    return authData;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      return rejectWithValue(
+        error.response?.data?.message ||
+          "Google login failed. Please try again.",
+      );
+    }
+
+    return rejectWithValue("Something went wrong during Google login.");
+  }
+});
+
 const loginSlice = createSlice({
   name: "login",
   initialState,
@@ -118,6 +151,9 @@ const loginSlice = createSlice({
     setLoginPassword: (state, action: { payload: string }) => {
       state.password = action.payload;
     },
+    setLoginError: (state, action: { payload: string }) => {
+  state.error = action.payload;
+},
 
     resetLoginForm: (state) => {
       state.email = "";
@@ -125,6 +161,7 @@ const loginSlice = createSlice({
       state.error = null;
       state.success = false;
     },
+    
 
     logout: (state) => {
       state.email = "";
@@ -134,10 +171,14 @@ const loginSlice = createSlice({
       state.success = false;
       state.token = null;
       state.user = null;
+
+      localStorage.removeItem(STORAGE_KEY);
     },
   },
+
   extraReducers: (builder) => {
     builder
+      // Normal login
       .addCase(login.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -155,11 +196,37 @@ const loginSlice = createSlice({
         state.isLoading = false;
         state.success = false;
         state.error = action.payload || "Unable to log in. Please try again.";
+      })
+
+      // Google login
+      .addCase(googleLogin.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.success = true;
+        state.error = null;
+        state.token = action.payload.token;
+        state.user = action.payload.user;
+        state.password = "";
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.isLoading = false;
+        state.success = false;
+        state.error =
+          action.payload || "Unable to log in with Google. Please try again.";
       });
   },
 });
 
-export const { setLoginEmail, setLoginPassword, resetLoginForm, logout } =
-  loginSlice.actions;
+export const {
+  setLoginEmail,
+  setLoginPassword,
+  setLoginError,
+  resetLoginForm,
+  logout,
+} = loginSlice.actions;
 
 export default loginSlice.reducer;
