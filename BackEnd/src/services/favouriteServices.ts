@@ -55,7 +55,6 @@ export const findFavouritesByUserId = async (
        hotels.address,
        hotels.city,
        hotels.country,
-       hotels.price_per_night,
        hotels.star_rating
      FROM favourites
      INNER JOIN hotels
@@ -67,7 +66,6 @@ export const findFavouritesByUserId = async (
 
   return rows;
 };
-
 // Remove a hotel from a user's favourites
 export const removeFavourite = async (
   userId: number,

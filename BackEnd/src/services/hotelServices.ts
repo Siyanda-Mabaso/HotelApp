@@ -14,15 +14,12 @@ export const createHotelTable = async (): Promise<void> => {
                 city VARCHAR(100) NOT NULL,
                 country VARCHAR(100) NOT NULL,
                 star_rating NUMERIC(2,1),
-                price_per_night NUMERIC(10,2) NOT NULL,
+
                 facilities TEXT[] NOT NULL DEFAULT '{}',
                 created_at TIMESTAMP DEFAULT NOW(),
 
                 CONSTRAINT valid_star_rating
-                    CHECK (star_rating IS NULL OR star_rating BETWEEN 1 AND 5),
-
-                CONSTRAINT valid_price
-                    CHECK (price_per_night >= 0)
+                    CHECK (star_rating IS NULL OR star_rating BETWEEN 1 AND 5)
             )
         `);
 
@@ -47,7 +44,6 @@ export const createHotel = async (
     city: string,
     country: string,
     star_rating: number | null,
-    price_per_night: number,
     facilities: string[] = []
 ): Promise<Hotel> => {
     const { rows } = await query(
@@ -58,11 +54,12 @@ export const createHotel = async (
             city,
             country,
             star_rating,
-            price_per_night,
             facilities
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING *`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING
+            id, name, description, address, city, country,
+            star_rating, facilities, created_at`,
         [
             name,
             description,
@@ -70,7 +67,6 @@ export const createHotel = async (
             city,
             country,
             star_rating,
-            price_per_night,
             facilities
         ]
     );
@@ -81,7 +77,11 @@ export const createHotel = async (
 // Get all hotels
 export const findAllHotels = async (): Promise<Hotel[]> => {
     const { rows } = await query(
-        `SELECT * FROM hotels ORDER BY created_at DESC`
+        `SELECT
+            id, name, description, address, city, country,
+            star_rating, facilities, created_at
+         FROM hotels
+         ORDER BY created_at DESC`
     );
 
     return rows;
@@ -92,7 +92,11 @@ export const findHotelById = async (
     id: number
 ): Promise<Hotel | null> => {
     const { rows } = await query(
-        `SELECT * FROM hotels WHERE id = $1`,
+        `SELECT
+            id, name, description, address, city, country,
+            star_rating, facilities, created_at
+         FROM hotels
+         WHERE id = $1`,
         [id]
     );
 
@@ -108,7 +112,6 @@ export const updateHotel = async (
     city: string,
     country: string,
     star_rating: number | null,
-    price_per_night: number,
     facilities?: string[]
 ): Promise<Hotel | null> => {
     const { rows } = await query(
@@ -119,10 +122,11 @@ export const updateHotel = async (
              city = $4,
              country = $5,
              star_rating = $6,
-             price_per_night = $7,
-             facilities = COALESCE($8::TEXT[], facilities)
-         WHERE id = $9
-         RETURNING *`,
+             facilities = COALESCE($7::TEXT[], facilities)
+         WHERE id = $8
+         RETURNING
+            id, name, description, address, city, country,
+            star_rating, facilities, created_at`,
         [
             name,
             description,
@@ -130,7 +134,6 @@ export const updateHotel = async (
             city,
             country,
             star_rating,
-            price_per_night,
             facilities ?? null,
             id
         ]

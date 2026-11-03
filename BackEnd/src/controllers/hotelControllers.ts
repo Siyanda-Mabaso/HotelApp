@@ -21,7 +21,6 @@ export const addHotel = async (
             city,
             country,
             star_rating,
-            price_per_night,
             facilities
         } = req.body;
 
@@ -30,9 +29,7 @@ export const addHotel = async (
             !description ||
             !address ||
             !city ||
-            !country ||
-            price_per_night === undefined ||
-            price_per_night === null
+            !country
         ) {
             res.status(400).json({
                 message: "Please provide all required hotel details"
@@ -61,7 +58,6 @@ export const addHotel = async (
             city,
             country,
             star_rating ?? null,
-            Number(price_per_night),
             facilities ?? []
         );
 
@@ -158,7 +154,6 @@ export const editHotel = async (
             city,
             country,
             star_rating,
-            price_per_night,
             facilities
         } = req.body;
 
@@ -167,9 +162,7 @@ export const editHotel = async (
             !description ||
             !address ||
             !city ||
-            !country ||
-            price_per_night === undefined ||
-            price_per_night === null
+            !country
         ) {
             res.status(400).json({
                 message: "Please provide all required hotel details"
@@ -199,7 +192,6 @@ export const editHotel = async (
             city,
             country,
             star_rating ?? null,
-            Number(price_per_night),
             facilities
         );
 
