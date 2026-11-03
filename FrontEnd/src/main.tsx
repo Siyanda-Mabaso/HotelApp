@@ -8,10 +8,10 @@ import App from "./App";
 import store from "./Store/store";
 import "./index.css";
 
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const googleClientId = import.meta.env.GOOGLE_CLIENT_ID;
 
 if (!googleClientId) {
-  console.error("VITE_GOOGLE_CLIENT_ID is missing from the frontend .env file");
+  console.error("GOOGLE_CLIENT_ID is missing from the frontend .env file");
 }
 
 createRoot(document.getElementById("root")!).render(
