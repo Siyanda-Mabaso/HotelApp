@@ -73,3 +73,15 @@
   color: #006666;
   text-decoration: underline;
 }
+.googleSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.googleSection p {
+  font-size: 14px;
+  color: #666;
+}
