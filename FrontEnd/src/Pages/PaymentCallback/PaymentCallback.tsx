@@ -66,14 +66,14 @@ const PaymentCallback = () => {
 
     const verifyPayment = async () => {
       try {
-        const verifiedBooking = await dispatch(
-          verifyBookingPayment({
-            bookingId,
-            reference,
-          }),
-        ).unwrap();
+       const verifiedBooking = await dispatch(
+  verifyBookingPayment({ bookingId, reference })
+).unwrap();
 
-        setBooking(verifiedBooking);
+setBooking(verifiedBooking);
+
+// Redirect to My Bookings after successful verification
+navigate("/my-bookings", { replace: true });
       } catch (err) {
         setError(
           typeof err === "string"
@@ -153,7 +153,7 @@ const PaymentCallback = () => {
 
               <button
                 type="button"
-                onClick={() => navigate("/bookings")}
+                onClick={() => navigate("/my-bookings")}
                 className={styles.button}
               >
                 View my bookings

@@ -32,7 +32,7 @@ const App = () => {
           <Route path="/hotels/:id/book" element={<Booking />} />
           <Route path="/my-bookings" element={<MyBookings />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/payment-callback" element={<PaymentCallback />} />
+          <Route path="/payment/callback" element={<PaymentCallback />} />
         </Route>
 
         {/* Admin-only pages */}
