@@ -30,7 +30,7 @@ interface HotelFormData {
   city: string;
   country: string;
   star_rating: string;
-  price_per_night: string;
+
 }
 
 const emptyForm: HotelFormData = {
@@ -40,7 +40,7 @@ const emptyForm: HotelFormData = {
   city: "",
   country: "",
   star_rating: "",
-  price_per_night: "",
+ 
 };
 
 const ViewHotels = () => {
@@ -75,28 +75,27 @@ const ViewHotels = () => {
     void dispatch(fetchHotels());
   }, [dispatch]);
 
-  const formatPrice = (price: number) =>
-    `R ${Number(price).toLocaleString("en-ZA")}`;
+  // const formatPrice = (price: number) =>
+  //   `R ${Number(price).toLocaleString("en-ZA")}`;
 
   // ---------------- HOTEL MANAGEMENT ----------------
 
   const handleEditClick = (hotel: Hotel) => {
-    setEditingHotel(hotel);
+  setEditingHotel(hotel);
 
-    setFormData({
-      name: hotel.name,
-      description: hotel.description,
-      address: hotel.address,
-      city: hotel.city,
-      country: hotel.country,
-      star_rating: String(hotel.star_rating),
-      price_per_night: String(hotel.price_per_night),
-    });
+  setFormData({
+    name: hotel.name,
+    description: hotel.description,
+    address: hotel.address,
+    city: hotel.city,
+    country: hotel.country,
+    star_rating: String(hotel.star_rating),
+  });
 
-    setFormError("");
-    setSuccessMessage("");
-    dispatch(clearHotelError());
-  };
+  setFormError("");
+  setSuccessMessage("");
+  dispatch(clearHotelError());
+};
 
   const handleFormChange = (field: keyof HotelFormData, value: string) => {
     setFormData((previous) => ({
@@ -120,17 +119,17 @@ const ViewHotels = () => {
     }
 
     const starRating = Number(formData.star_rating);
-    const pricePerNight = Number(formData.price_per_night);
+    // const pricePerNight = Number(formData.price_per_night);
 
     if (!Number.isInteger(starRating) || starRating < 1 || starRating > 5) {
       setFormError("Please select a valid star rating.");
       return;
     }
 
-    if (!Number.isFinite(pricePerNight) || pricePerNight < 0) {
-      setFormError("Please enter a valid price per night.");
-      return;
-    }
+    // // if (!Number.isFinite(pricePerNight) || pricePerNight < 0) {
+    //   setFormError("Please enter a valid price per night.");
+    //   return;
+    // }
 
     if (
       !formData.name.trim() ||
@@ -152,16 +151,15 @@ const ViewHotels = () => {
         updateHotel({
           id: editingHotel.id,
           token,
-          hotel: {
-            name: formData.name.trim(),
-            description: formData.description.trim(),
-            address: formData.address.trim(),
-            city: formData.city.trim(),
-            country: formData.country.trim(),
-            star_rating: starRating,
-            price_per_night: pricePerNight,
-            facilities: editingHotel.facilities ?? [],
-          },
+      hotel: {
+  name: formData.name.trim(),
+  description: formData.description.trim(),
+  address: formData.address.trim(),
+  city: formData.city.trim(),
+  country: formData.country.trim(),
+  star_rating: starRating,
+  facilities: editingHotel.facilities ?? [],
+},
         }),
       ).unwrap();
 
@@ -397,12 +395,7 @@ const ViewHotels = () => {
 
                     <p className={styles.description}>{hotel.description}</p>
 
-                    <div className={styles.cardFooter}>
-                      <div>
-                        <strong>{formatPrice(hotel.price_per_night)}</strong>
-                        <span className={styles.perNight}> / night</span>
-                      </div>
-                    </div>
+                    
 
                     <div className={styles.managementActions}>
                       <button
@@ -566,19 +559,7 @@ const ViewHotels = () => {
                   </select>
                 </label>
 
-                <label>
-                  Price Per Night (R)
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.price_per_night}
-                    onChange={(event) =>
-                      handleFormChange("price_per_night", event.target.value)
-                    }
-                    required
-                  />
-                </label>
+             
               </div>
 
               {formError && (

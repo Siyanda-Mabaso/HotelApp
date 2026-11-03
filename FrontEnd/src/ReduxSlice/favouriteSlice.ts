@@ -11,7 +11,6 @@ export interface Favourite {
     address: string;
     city: string;
     country: string;
-    price_per_night: number;
     star_rating: number;
 }
 

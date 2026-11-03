@@ -260,12 +260,12 @@ const Profile = () => {
                   )}
                 </p>
 
-                <p>
+                {/* <p>
                   <strong>
                     R{Number(favourite.price_per_night).toLocaleString("en-ZA")}
                   </strong>{" "}
                   per night
-                </p>
+                </p> */}
 
                 <div className={styles.favouriteActions}>
                   <button

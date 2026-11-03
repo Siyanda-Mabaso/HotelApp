@@ -389,56 +389,48 @@ const HotelDetails = () => {
               </section>
 
               {/* Price and customer actions */}
-              <section className={styles.priceSection}>
-                <div>
-                  <p className={styles.priceLabel}>Price per night</p>
+    {/* Customer actions */}
+<section className={styles.priceSection}>
+  <div className={styles.actionButtons}>
+    <button
+      type="button"
+      className={`${styles.favouriteButton} ${
+        isFavourite ? styles.favouriteActive : ""
+      }`}
+      onClick={handleFavouriteClick}
+      disabled={isSavingFavourite}
+      aria-label={
+        isFavourite
+          ? "Remove from favourites"
+          : "Add to favourites"
+      }
+      aria-pressed={isFavourite}
+      title={
+        isFavourite
+          ? "Remove from favourites"
+          : "Add to favourites"
+      }
+    >
+      {isSavingFavourite ? "…" : isFavourite ? "♥" : "♡"}
+    </button>
 
-                  <p className={styles.price}>
-                    R{Number(hotel.price_per_night).toLocaleString("en-ZA")}
-                    <span> / night</span>
-                  </p>
-                </div>
+    <button
+      type="button"
+      className={styles.secondaryButton}
+      onClick={handleShare}
+    >
+      Share Hotel
+    </button>
 
-                <div className={styles.actionButtons}>
-                  <button
-                    type="button"
-                    className={`${styles.favouriteButton} ${
-                      isFavourite ? styles.favouriteActive : ""
-                    }`}
-                    onClick={handleFavouriteClick}
-                    disabled={isSavingFavourite}
-                    aria-label={
-                      isFavourite
-                        ? "Remove from favourites"
-                        : "Add to favourites"
-                    }
-                    aria-pressed={isFavourite}
-                    title={
-                      isFavourite
-                        ? "Remove from favourites"
-                        : "Add to favourites"
-                    }
-                  >
-                    {isSavingFavourite ? "…" : isFavourite ? "♥" : "♡"}
-                  </button>
-
-                  <button
-                    type="button"
-                    className={styles.secondaryButton}
-                    onClick={handleShare}
-                  >
-                    Share Hotel
-                  </button>
-
-                  <button
-                    type="button"
-                    className={styles.primaryButton}
-                    onClick={() => navigate(`/hotels/${hotel.id}/book`)}
-                  >
-                    Book This Hotel
-                  </button>
-                </div>
-              </section>
+    <button
+      type="button"
+      className={styles.primaryButton}
+      onClick={() => navigate(`/hotels/${hotel.id}/book`)}
+    >
+      Book This Hotel
+    </button>
+  </div>
+</section>
 
               {favouriteMessage && (
                 <p className={styles.favouriteMessage} role="status">
