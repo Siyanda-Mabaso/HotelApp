@@ -1,6 +1,6 @@
 
 import { query } from "../config/database";
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
 import { User } from "../types/user.types";
 
 // Create users table
@@ -11,11 +11,17 @@ export const createUserTable = async (): Promise<void> => {
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 email VARCHAR(255) NOT NULL UNIQUE,
-                password_hash VARCHAR(255) NOT NULL,
+                password_hash VARCHAR(255),
                 role VARCHAR(50) NOT NULL DEFAULT 'customer'
                     CHECK (role IN ('customer', 'admin')),
                 created_at TIMESTAMP DEFAULT NOW()
             )
+        `);
+
+        // Allow users who register through Google to have no password
+        await query(`
+            ALTER TABLE users
+            ALTER COLUMN password_hash DROP NOT NULL
         `);
 
         console.log("Users table is ready");
@@ -37,7 +43,7 @@ export const findUserByEmail = async (
     return rows[0] || null;
 };
 
-// Register a user
+// Register a user with email and password
 export const createUser = async (
     email: string,
     password: string,
@@ -62,20 +68,57 @@ export const createUser = async (
     return rows[0];
 };
 
+// Find or create a user through Google OAuth
+export const findOrCreateGoogleUser = async (
+    email: string,
+    name: string
+): Promise<User> => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await findUserByEmail(normalizedEmail);
+
+    if (existingUser) {
+        const { password_hash, ...safeUser } = existingUser;
+        return safeUser as User;
+    }
+
+    const { rows } = await query(
+        `INSERT INTO users (name, email, password_hash, role)
+         VALUES ($1, $2, NULL, 'customer')
+         ON CONFLICT (email) DO NOTHING
+         RETURNING id, name, email, role, created_at`,
+        [name, normalizedEmail]
+    );
+
+    // Handle another request creating the same email simultaneously
+    if (rows.length > 0) {
+        return rows[0];
+    }
+
+    const user = await findUserByEmail(normalizedEmail);
+
+    if (!user) {
+        throw new Error("Unable to create or find Google user");
+    }
+
+    const { password_hash, ...safeUser } = user;
+    return safeUser as User;
+};
+
 // Verify login credentials
 export const verifyUserPassword = async (
     email: string,
     password: string
 ): Promise<User | null> => {
-    const user = await findUserByEmail(email);
+    const user = await findUserByEmail(email.trim().toLowerCase());
 
-    if (!user) {
+    if (!user || !user.password_hash) {
         return null;
     }
 
     const passwordMatches = await bcrypt.compare(
         password,
-        user.password_hash!
+        user.password_hash
     );
 
     if (!passwordMatches) {

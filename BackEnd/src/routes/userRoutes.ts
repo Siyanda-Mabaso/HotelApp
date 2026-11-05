@@ -4,6 +4,7 @@ import { Router } from "express";
 import {
     register,
     login,
+    googleLogin,
     getAllUsers,
     getUsersById,
     updateUserById,
@@ -11,7 +12,6 @@ import {
     getMyProfile,
     updateMyProfile
 } from "../controllers/userControllers";
-
 import {
     protect,
     adminOnly
@@ -19,10 +19,12 @@ import {
 
 const router = Router();
 
+
 // Public routes
 router.post("/register", register);
 router.post("/login", login);
-
+// Google OAuth login
+router.post("/google-login", googleLogin);
 // Authenticated profile routes
 router.get("/users/me", protect, getMyProfile);
 router.put("/users/me", protect, updateMyProfile);
