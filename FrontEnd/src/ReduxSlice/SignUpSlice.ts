@@ -27,7 +27,9 @@ const initialState: SignUpState = {
 export const signup = createAsyncThunk(
   "signup",
   async (userData: SignUpState) => {
-    const response = await axios.post("/api/register", {
+  const response = await axios.post(
+  `${import.meta.env.VITE_API_URL}/register`,
+  {
       name: userData.name,
       email: userData.email,
       password: userData.password,
