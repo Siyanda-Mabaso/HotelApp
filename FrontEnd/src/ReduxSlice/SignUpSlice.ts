@@ -1,4 +1,9 @@
-import {createAsyncThunk,createSlice,type PayloadAction,} from "@reduxjs/toolkit";
+
+import {
+  createAsyncThunk,
+  createSlice,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
 import axios from "axios";
 
 export interface SignUpState {
@@ -22,14 +27,11 @@ const initialState: SignUpState = {
 export const signup = createAsyncThunk(
   "signup",
   async (userData: SignUpState) => {
-    const response = await axios.post(
-     "http://localhost:3000/api/register",
-      {
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-      },
-    );
+    const response = await axios.post("/api/register", {
+      name: userData.name,
+      email: userData.email,
+      password: userData.password,
+    });
 
     return response.data;
   },
@@ -72,15 +74,7 @@ const SignUpSlice = createSlice({
       .addCase(signup.rejected, (state, action) => {
         state.isLoading = false;
         state.success = false;
-
-        if (axios.isAxiosError(action.error)) {
-          state.error =
-            (action.payload as string | undefined) ||
-            action.error.message ||
-            "Signup failed";
-        } else {
-          state.error = action.error.message || "Signup failed";
-        }
+        state.error = action.error.message || "Signup failed";
       });
   },
 });
